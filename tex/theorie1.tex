@@ -1,0 +1,82 @@
+%=========================================================
+
+% Here you can choose to compile with or without solutions.
+% However, this definition is ignored if you use any
+% command from the `Makefile`.
+\providecommand{\withSol}{\iftrue}
+
+%=========================================================
+
+\documentclass
+[twoside,german,colorbacktitle,accentcolor=tud9c]
+{tudexercise}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{amstext}
+\usepackage{amsmath}
+\usepackage{graphicx}
+%\usepackage{setspace}
+\usepackage{multicol}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{units}
+%\usepackage{subfigure}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{fancyref}
+\usepackage{gensymb}
+\usepackage{tikz}
+\usetikzlibrary{shapes.misc} 
+
+
+%=========================================================
+
+
+\setcounter{section}{1}
+%=========================================================
+
+\newcommand{\grp}{8}
+
+%=========================================================
+
+
+\begin{document}
+
+\title{CV 2 exercise \arabic{section}}
+\subtitle{Summer Semester 2019}
+\subsubtitle{Gruop \grp{}}
+
+\maketitle
+
+%=========================================================
+
+
+
+\begin{examheader}
+	\textmb{CV2 exercise  \arabic{section} | Group \grp{}}\\
+	\begin{tabular}{l l l}
+		Moritz Fuchs	& Diedon Xhiha	\\
+	\end{tabular}
+\end{examheader} 
+
+
+%=========================================================
+% Anpassung an Aufgabenstellung
+\renewcommand\thesubsection{Problem \arabic{subsection}}
+\renewcommand\thesubsubsection{\arabic{subsubsection}.}
+
+%=========================================================
+\newpage
+\input{ProbabilitiesStatistics.tex}
+
+\newpage
+\input{Modeling.tex}
+\setcounter{subsection}{3}
+\newpage
+\input{StereoLikelihood.tex}
+
+%=========================================================
+
+\end{document}
