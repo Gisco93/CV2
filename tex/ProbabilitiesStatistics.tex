@@ -8,11 +8,35 @@
 
 \subsection{Probabilities and Statistics (13 Points)}
 \subsubsection{1 Point}
-
+\begin{tabular}{|c|c||c|c|}
+x & y  & example x & example y \\\hline
+discrete & discrete & exam grade & exam duration \\
+continuous & discrete & location & number of bathtubducks in sight\\
+continuous & continuous & velocity while driving & acceleration while driving\\
+\end{tabular}
 \subsubsection{2 Points}
-
+ with the chainrule we can extend  as follows:
+ \begin{align*}
+p(v,w,x,y,z) &= p(w,x,y,z)p(v|w,x,y,z)\\
+p(v,w,x,y,z) &= p(x,y,z)p(w|x,y,z)p(v|w,x,y,z)\\
+\end{align*}
 \subsubsection{3 Points}
-
+ \begin{align*}
+p(w,x) &= \int \int p(w,x,y,z) dy dz \\
+&= \int \int p(w) p(y|z) p(z|x,w) p(x) dy dz\\
+&= p(x) p(w) \int \int \frac{p(y,z)}{p(z)} \frac{p(z,x,w)}{p(x,w)} dy dz\\
+&= p(x) p(w) \int (\int \frac{p(y,z)}{p(z)}dy) \frac{p(z,x,w)}{p(x,w)}  dz\\
+&= p(x) p(w) \int \frac{p(z)}{p(z)} \frac{p(z,x,w)}{p(x,w)}  dz\\
+&= p(x) p(w) \int \frac{p(z,x,w)}{p(x,w)}  dz\\
+&= p(x) p(w) \frac{p(x,w)}{p(x,w)}\\
+&= p(x) p(w) \\
+\end{align*}
 \subsubsection{3 Points}
-
+\begin{align*}
+E[(x-\mu)^2] &= E[x^2-2 x \mu + \mu^2]\\
+&= E[x^2] + E[-2 x \mu] + E[\mu^2]\\
+&=  E[x^2] -2 \mu E[x] +  \mu \mu & | E[x]=\mu\\
+&=  E[x^2] -2 E[x] E[x] +  E[x] E[x] \\
+&=  E[x^2] -  E[x] E[x] 
+\end{align*}
 \subsubsection{4 Points}
