@@ -8,11 +8,14 @@
 
 \subsection{Modeling (5 Points)}
 \subsubsection{1 Point}
-
+We assume conditional independence of the pixels in the Image $I^1$ with the pixels that are produced from  $I^0$ with translation that has been done at each pixel by the d(disparity). Therefore we  make an assumption that we have brightness or color constancy and no occlusions, if they are not fullfilled than this does not be valid.
 \subsubsection{1 Point}
-
+Gaussian distributions are light tailed, due to this they are very sensitive to outliers, they give large penalty or really low probability to outliers.These outliers are caused by occlusions, shading, shadows, gain control from camera etc. In order to deal with those problems we should choose robust likelihood instead of Guassian.\\
+As we know that the influence is proportional to the derivative of the error function then we have by derivative of squared Guassian a linear function, it means that the further away the outliers is the bigger is the influence on the Estimate. In the other hand we take absolute value function that corresponds the Laplacian distribution, by taking the derivative of  the ablsolute value function scaled by $\sigma$. So Influence of a outlier does not increase the further it is away. The influence on any point on Estimate is the same no matter where the point is. It is more robust then Gaussian but of course with it's issues.
 \subsubsection{2 Points}
 
 \subsubsection{1 Point}
+Kronecker delta used in Potts Model assign high compatibility when the disparities in the two neighbor pixels are the same and if they are different a lower compatibility, no matter how different they are.  
 
 \subsubsection{1 Point}
+As we have learnt, in likelihood function are compared only single pixel values, and with help of MRF prior are modelled dependencies between nearby pixels based  on the disparity values. This help us to conlcude that dependencies between pixels are not constraind to a region.
