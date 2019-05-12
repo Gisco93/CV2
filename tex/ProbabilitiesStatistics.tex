@@ -16,10 +16,13 @@ continuous & continuous & velocity while driving & acceleration while driving\\
 \end{tabular}
 \subsubsection{2 Points}
  with the chainrule we can extend  as follows:
- \begin{align*}
+ \begin{align}
 p(v,w,x,y,z) &= p(w,x,y,z)p(v|w,x,y,z)\\
-p(v,w,x,y,z) &= p(x,y,z)p(w|x,y,z)p(v|w,x,y,z)\\
-\end{align*}
+p(v,w,x,y,z) &= p(x,y,z)p(w|x,y,z)p(v|w,x,y,z) \label{eq1} \\
+p(v,w,x,y,z) &= p(y,z) p(x|y,z)p(w|x,y,z)p(v|w,x,y,z)\\
+p(v,w,x,y,z) &=  p(z) p(y|z) p(y,z) p(x|y,z)p(w|x,y,z)p(v|w,x,y,z)\\
+\end{align}
+as equation (\ref{eq1}) is already the answer we are looking for.
 \subsubsection{3 Points}
  \begin{align*}
 p(w,x) &= \int \int p(w,x,y,z) dy dz \\
@@ -40,3 +43,11 @@ E[(x-\mu)^2] &= E[x^2-2 x \mu + \mu^2]\\
 &=  E[x^2] -  E[x] E[x] 
 \end{align*}
 \subsubsection{4 Points}
+Lets call the choice of  door 1 $D$, therefore the probability that the prize is behind door 1 is $p(D))=\frac{1}{3}$ and the probality that the prize is not behind door 1 is $p(not D) = 1- p(D) = \frac{2}{3}$.\\ Now the event $R$ takes place, in which the game host reveals one Door with no prize behind it. Therefore we have the conditional probalities $p(R|D) = 1$ and $p(R|not D) = 1$.\\ We now want to know what the probability that the prize is behind door 1 is $p(D|R)$.\\
+Given Bayes rule and that $p(R)$ can be factorized as $p(R|D)p(D) + p(R|not D)p(not D)$:
+ $$p(D|R)= \frac{p(R|D)p(D)}{p(R)}= \frac{p(R|D)p(D)}{p(R|D)p(D) + p(R|not D)p(not D)} $$ 
+ We plug in our probalities for each case:
+ $$ p(D|R)= \frac{1\cdot \frac{1}{3}}{1\cdot  \frac{1}{3} +1 \cdot  \frac{2}{3}} =  \frac{1}{3} $$
+ Therefore the probability behind the door $p(D_2)$,  which the game show host didn't chose is
+ $$p(D_2) = 1 - p(D|R) = \frac{2}{3}$$
+ , which shows us that we should switch to the door 2.
