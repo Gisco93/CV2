@@ -40,8 +40,7 @@ function crop_image(i::Array{Float64,2}, gt::Array{Float64,2})
 end
 
 function make_noise(i::Array{Float64,2}, noise_level::Float64)
-    i_noise = zeros(size(i,1),size(i,2))
-    i_noise = i
+    i_noise = deepcopy(i)
     dim_1 = size(i,1)
     dim_2 = size(i,2)
 
@@ -52,9 +51,9 @@ function make_noise(i::Array{Float64,2}, noise_level::Float64)
     # replace randomly selected pixels with more randomness ;)
     for num_i = 1:num_rand
         # sample randomly between [0.1,0.9]
-        n= 0.8*rand()+ 0.1
-        i_noise[idx_img[num_i]] = 255*n
+        i_noise[idx_img[num_i]] = 0.8*rand()+ 0.1
     end
+
     @assert size(i_noise) == size(i)
     return i_noise::Array{Float64,2}
 end
@@ -68,7 +67,7 @@ function gaussian_lh(i0::Array{Float64,2}, i1::Array{Float64,2}, mu::Float64, si
     for i = 1:size(i0,1)
         for j = 1:size(i0,2)
             # Likelyhood:
-            l *= scaling
+            #l *= scaling
             l *=  exp(-((((i0[i,j]-i1[i,j])-mu)^2)/(2*sigma^2)))
         end
     end
@@ -82,9 +81,9 @@ function gaussian_nllh(i0::Array{Float64,2}, i1::Array{Float64,2}, mu::Float64, 
     nll=0
     for i = 1:size(i0,1)
         for j = 1:size(i0,2)
-            #log: -log(scaling) -((((img0[i,j]-img1_d[i,j])-mu)^2)/(2*sigma^2))
+            #log: -log(scaling) -((((i0[i,j]-i1[i,j])-mu)^2)/(2*sigma^2))
             #negative log:
-            nll += log(scaling)
+            #nll += log(scaling)
             nll += ((i0[i,j]-i1[i,j])-mu)^2
         end
     end
@@ -101,7 +100,7 @@ function laplacian_nllh(i0::Array{Float64,2}, i1::Array{Float64,2}, mu::Float64,
         for j = 1:size(i0,2)
             #log: -log(scaling) -((((i0[i,j]-i1_d[i,j])-mu)^2)/(2*s^2))
             #negative log:
-            nll += log(scaling)
+            #nll += log(scaling)
             nll += abs(i0[i,j]-i1[i,j]-mu)
         end
     end
@@ -131,25 +130,56 @@ function problem4()
     #given mu & sigma & s
     mu = 0.0
     sigma = 1.2
-    s = 1.0
+    s = 1.2
     # load I0, I1 and d_gt
     img0,img1,d = load_data()
-    show_3Plot(img0,img1,d,"Left","Right","Disparity");
+    #show_3Plot(img0,img1,d,"Left","Right","Disparity");
     #2) apply disparity and crop
     println("2):\n -Shift img1 with disparity \n -Crop images \n -Compute gaussian Log Likelyhood")
     #apply Disparity to img1
     img1_d = shift_disparity(img1,d)
     #crop all images and d
     img0_crop = crop_image(img0,d)
-    d_crop = crop_image(d,d)
     img1_d_crop = crop_image(img1_d,d)
-    show_3Plot(img0_crop,img1_d_crop,d_crop,"Left cropped","Right shifted and cropped","Disparity cropped");
+    d_crop = crop_image(d,d)
+    #show_3Plot(img0_crop,img1_d_crop,d_crop,"Left cropped","Right shifted & cropped","Disparity cropped");
     # Gausian Log Likelyhood
+    # DISCLAIMER as for part 6 the scaling terms are commented out.
+    # This is for better compareability between the Gausian and Laplacian Likelyhood
+    # as the scaling terms vary and (seemingly) migate the effect of noise for the Gausian.
+    # search for: "scaling" to comment them in as you need, please.
     println("Gausian lh: ", gaussian_lh(img0_crop,img1_d_crop,mu,sigma))
     println("3): \n Compute gaussian negative Log Likelyhood")
     println("Gausian nllh: ", gaussian_nllh(img0_crop,img1_d_crop,mu,sigma))
 
-    # image_n = make_noise(img0, 0.12);
-    # show_3Plot(image_n,image_right,difference,"Noise","Right_shifted","Difference");
+    #4) make images with noise...
+    # as they also need to be shifted and cropped, we'll use img1_d_crop for simplification
+    img1_n12 = make_noise(img1_d_crop, 0.12);
+    img1_n25 = make_noise(img1_d_crop, 0.25);
+
+    #show_3Plot(img1_d_crop,img1_n12,img1_n25,"Original","12% Noise","25% Noise");
+    println("4): \n Compute gaussian Likelyhood for 12% noise")
+    println("Gausian lh: ", gaussian_lh(img0_crop,img1_n12,mu,sigma))
+    println("Compute gaussian negative Log Likelyhood for 12% noise")
+    println("Gausian nllh: ", gaussian_nllh(img0_crop,img1_n12,mu,sigma))
+
+    println("Compute gaussian Likelyhood for 25% noise")
+    println("Gausian lh: ", gaussian_lh(img0_crop,img1_n25,mu,sigma))
+    println("Compute gaussian negative Log Likelyhood for 25% noise")
+    println("Gausian nllh: ", gaussian_nllh(img0_crop,img1_n25,mu,sigma))
+
+    println("5): \n Compute Laplacian negative Log Likelyhood for 0% noise")
+    println("Laplacian nllh: ", laplacian_nllh(img0_crop,img1_d_crop,mu,s))
+    println("Compute Laplacian negative Log Likelyhood for 12% noise")
+    println("Laplacian nllh: ", laplacian_nllh(img0_crop,img1_n12,mu,s))
+    println("Compute Laplacian negative Log Likelyhood for 25% noise")
+    println("Laplacian nllh: ", laplacian_nllh(img0_crop,img1_n25,mu,s))
+
+    println("6): \nThe Gausian negativ log Likelyhood for 12% noise rises by a factor of ",gaussian_nllh(img0_crop,img1_n12,mu,sigma)/gaussian_nllh(img0_crop,img1_d_crop,mu,sigma))
+    println("The Laplacian negativ log Likelyhood for 12% noise rises by a factor of ",laplacian_nllh(img0_crop,img1_n12,mu,sigma)/laplacian_nllh(img0_crop,img1_d_crop,mu,sigma))
+
+    println("The Gausian negativ log Likelyhood for 25% noise rises by a factor of ",gaussian_nllh(img0_crop,img1_n25,mu,sigma)/gaussian_nllh(img0_crop,img1_d_crop,mu,sigma))
+    println("The Laplacian negativ log Likelyhood for 25% noise rises by a factor of ",laplacian_nllh(img0_crop,img1_n25,mu,sigma)/laplacian_nllh(img0_crop,img1_d_crop,mu,sigma))
+
 
 end
