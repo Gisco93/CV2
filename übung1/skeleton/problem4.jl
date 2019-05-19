@@ -4,6 +4,7 @@ import PyPlot
 # Problem 4: Stereo likelihood
 
 function load_data()
+    #see Problem 3
     img0 = PyPlot.imread("i0.png")
     img1 = PyPlot.imread("i1.png")
     i0 = 0.2989 * img0[:,:,1] + 0.5870 * img0[:,:,2] + 0.1140 * img0[:,:,3];
@@ -133,6 +134,7 @@ function problem4()
     s = 1.2
     # load I0, I1 and d_gt
     img0,img1,d = load_data()
+    # ============ You may use show_3Plot(3Image,3Titles) to see the results or just comment some of them in ;)
     #show_3Plot(img0,img1,d,"Left","Right","Disparity");
     #2) apply disparity and crop
     println("2):\n -Shift img1 with disparity \n -Crop images \n -Compute gaussian Log Likelyhood")
