@@ -8,22 +8,137 @@
 
 \subsection{Graphical models (20 Points)}
 \subsubsection{1 Point}
+Two main ingredients the set of random variables describing the entities involved the problem, and the second ingredient is the set of conditional probabilities, that tell us the relation between a certain variable and another variable or variables from the set.
+\subsubsection{1 Point}
+As we know that directed graphs are versatile, but not always appropriate. So they are not always be convenient  to provide conditional distributions, and some of certain conditional independence structures that a directed graph can not represent. So for example \textit{Loopy graph}, it is not possible to express the same conditional independence statements using the a directed graph model.
+\subsubsection{2 Points}
+	
+\begin{tikzpicture}
+%  \tikz{
+% nodes
+     \node[latent] (x_6) {$x_6$} ; %
+     \node[obs,above=of x_6,xshift=-1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_4) {$x_4$}; %
+     \node[obs,above=of x_6,xshift=1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_5) {$x_5$}; %
+     \node[obs,above=of x_4,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_2) {$x_2$}; %
+     \node[obs,above=of x_2,xshift=-1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_1) {$x_1$}; %
+     \node[obs,above=of x_2,xshift=1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_3) {$x_3$}; %
+     \node[obs,above=of x_2,xshift=2cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_7) {$x_7$}; %
+% plate
+    \plate [inner sep=.25cm,yshift=.2cm] {plate1} {(x_1)(x_2)(x_3)(x_4)(x_5)(x_6)(x_7)} {$Figure 1$}; 
+% edges
+     \edge {x_4,x_5} {x_6} 
+     \edge {x_2} {x_4}  
+     \edge {x_2} {x_5}  
+     \edge {x_1,x_3} {x_2}
+     \edge {x_7} {x_5}
+%}
+\end{tikzpicture}
 
+The Markov Blanket of variable $x_2$ is formed from the variables that are filled with gray color.
+
+\subsubsection{2 Points}
+The factorization of the directed graphical model is as follows\\
+$p(x_1,x_2,x_4,x_5,x_6,x_7,x_8,x_9,x_{10},x_{11},x_{12},x_{13},x_{14},x_{15})=p(x_1)p(x_2)p(x_3)p(x_6)p(x_7)p(x_4|x_1,x_2)p(x_5|x_2,x_3)p(x_{10}|x_7)\\p(x_{11}|x_{10})p(x_8|x_4,x_5)p(x_9|x_3,x_5,x_6)p(x_14|x_{11})p({x_12}|x_8,x_9)p(x_{13}|x_9)p(x_{15}|x_{12})$\\ \\
+The factorization of the undirected graphical model is as follows\\
+$p(x_1,x_2,x_4,x_5,x_6,x_7,x_8,x_9,x_{10},x_{11},x_{12},x_{13},x_{14},x_{15})=\frac{1}{Z}\phi_0(x_3) \phi_1(x_1,x_4) \phi_2(x_2,x_4,x_5,x_8) \phi_3(x_7,x_{10}) \phi_4(x_7,x_{11})\\ \phi_5(x_{11},x_{14}) \phi_6(x_5,x_9) \phi_7(x_8,x_{12}) \phi_8(x_9,x_{12},x_{13},x_{15}) \phi_9(x_6,x_9)$
 \subsubsection{1 Point}
 
-\subsubsection{2 Points}
+\begin{tikzpicture}
+%  \tikz{
+% nodes
+     \node[latent] (x_6) {$x_6$} ; %
+     \node[latent,above=of x_6,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_5) {$x_5$}; %
+     \node[latent,above=of x_6,xshift=4cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_3) {$x_3$}; %
+     \node[latent,above=of x_5,xshift=-1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_1) {$x_1$}; %
+     \node[latent,above=of x_5,xshift=1cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_2) {$x_2$}; %
+     \node[latent,above=of x_5,xshift=4cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (x_4) {$x_4$}; %
+
+% plate
+    \plate [inner sep=.25cm,yshift=.2cm] {plate1} {(x_1)(x_2)(x_3)(x_4)(x_5)(x_6)} {$Figure 2$}; 
+% edges
+     \draw 
+     (x_1) -- (x_2)
+     (x_1) -- (x_5)
+     (x_5) -- (x_6) 
+     (x_2) -- (x_4)
+     (x_2) -- (x_3) 
+     (x_4) -- (x_3) 
+     (x_2) -- (x_5);
+%}
+\end{tikzpicture}
 
 \subsubsection{2 Points}
+  \begin{tabular}{ | l | l | l | l | l |}
+	    \hline
+$x_1$ &  $ x_2$  &  $x_3$ &  $x_4$  & $ p(x_1,x_2,x_3,x_4)$  \\ \hline
+0	&   0	 &	0  &  	0   &    1*1*1*1=1                       \\ \hline
+0	&   0	 &	0  & 	1   &    1*1*0.1*0.1=0.01	          \\ \hline
+0	&   0	 &	1  &	0   &    1*0.1*0.1*1=0.01	          \\ \hline
+0	&   0	 &	1  &	1   &    1*0.1*2*0.1=0.02           \\ \hline
+0	&   1	 &	0  &	0   &    0.1*0.1*1*1=0.01           \\ \hline
+0	&   1	 &	0  &	1   &    0.1*0.1*0.1*0.1=0.0001\\ \hline
+0	&   1	 &	1  &	0   &    0.1*2*0.1*1=0.02           \\ \hline
+0	&   1	 &	1  &	1   &    0.1*2*2*0.1=0.04           \\ \hline
+1	&   0	 &	0  &	0   &    0.1*1*1*0.1=0.01           \\ \hline
+1	&   0	 &	0  &	1   &    0.1*1*0.1*2=0.02           \\ \hline
+1	&   0	 &	1  &	0   &    0.1*0.1*0.1*0.1=0.0001\\ \hline
+1	&   0	 &	1  &	1   &    0.1*0.1*2*2=0.04           \\ \hline
+1	&   1	 &	0  &	0   &    2*0.1*1+0.1=0.02           \\ \hline
+1	&   1	 &	0  &	1   &    2*0.1*0.1*2=0.04            \\ \hline
+1	&   1	 &	1  &	0   &    2*2*0.1*0.1=0.04            \\ \hline
+1	&   1	 &	1  &	1   &    2*2*2*2=8                        \\ \hline
 
-\subsubsection{1 Point}
+  \end{tabular}
 
 \subsubsection{2 Points}
+Based on those four record \\ \\
+  \begin{tabular}{ | l | l | l | l | l |}
+	    \hline
+a &  b  &  c &   p(a,b,c)  \\ \hline
+0	&   1	 &	0  & 0.048              \\ \hline
+1	&   0	 &	0  &  0.192	          \\ \hline
+0	&   1	 &	1  &  0.216	          \\ \hline
+1	&   0	 &	1  &  0.064              \\ \hline
 
-\subsubsection{2 Points}
-
+  \end{tabular}
+\\ \\
+The first and second row c remain the same but a and b change and with them the distribution too, the same happens in the third and fourth row. So we can conclude that those variable a and b are marginally dependent, when b=1 and a=0 then the distribution ia 0.048 but in the other hand, when b=0 and a=1 then the distribution is 0.192, so this means  knowing event b does help in value of event a and vise versa. \\ \\
 \subsubsection{3 Points}
 
+Based on the given distributions $p(a)$ $p(b|c)$ $p(c|a)$ we can draw the directed graph as follows :\\ \\
+\begin{tikzpicture}
+%  \tikz{
+% nodes
+     \node[latent] (a) {$a$} ; %
+     \node[latent,xshift=5cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (b) {$b$}; %
+     \node[latent,xshift=2.5cm,path picture={\ (path picture bounding box.south) rectangle (path picture bounding box.north west);}] (c) {$c$}; %
+
+% plate
+    \plate [inner sep=.25cm,yshift=.2cm] {plate1} {(a)(b)(c)} {$Figure 3$}; 
+% edges
+     \edge {a} {c} 
+     \edge {c} {b}  
+%}
+\end{tikzpicture} \\
+And from the figur above we can write:\\
+$p(a,b,c)=p(a)p(a|c)p(b|a,c)
+	    =p(a)p(a|c)p(b|c)$ \\
+As we know from directed graph, because 'c' tell us about 'a', we can take away 'a' from $p(b|a,c)$, and therefore we get the desired probability.  
+
+
 \subsubsection{2 Points}
+Markov blanket of variables in undirected graph:\\ 
+$x_1->x_2,x_3$\\
+$x_2->x_1,x_4$\\
+$x_3->x_1,x_4$\\
+$x_4->x_2,x_3$\\ \\
+Markov blanket of variables in directed graph:\\
+$x_1->x_2,x_3$\\
+$x_2->x_1,x_3,x_4$\\
+$x_3->x_1x_2,x_4$\\
+$x_4->x_2,x_3$
+
 
 \subsubsection{4 Points}
-
+Based also in the previous question about for Markov blanket for each of the variables, we can conclude that in the figure 2, undirected graph, the first one that says $x_1$ "is independent of" $x_4$ and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, is completely true based also in the definition that, a node is conditionally independent of all other nodes given its Markov blanket. The second one that says $x_2$ "is independent of" $x_3$, because the $x_3$ is not in the Markov blanket of $x_2$, and from definition a node is conditionally independent of all other nodes given its Markov blanket, and that $x_1$ and $x_4$ are the Markov blanket of $x_2$, because they are direct node of $x_2$.
+And for the directed Graph, first one that says $x_1$ "independent of" $x_4$, exactly as the definition from above, and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, because $x_1$ has 2 children and no other parents and also those children have just one parent and its $x_1$. The second one 
