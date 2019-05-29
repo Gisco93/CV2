@@ -1,4 +1,175 @@
 
+function log_studentt(x::Array{Float64,2}, alpha::Float64, sigma::Float64)
+
+    value = sum(-alpha .* log.(1.0 .+ x.*x ./ (2*sigma*sigma)))
+    grad = -2 * alpha .* x ./ (2*sigma*sigma .+ x.*x);
+
+    return value::Float64, grad::Array{Float64,2}
+end
+
+
+# Evaluate stereo log prior.
+# Set: alpha=1.0, sigma=1.0
+function stereo_log_prior(x::Array{Float64,2})
+
+    height,width = size(x)
+    # compute log over vertical and horizontal disparities
+
+    horizontal = log_studentt(x[:,1:end-1]-x[:,2:end],1.0,1.0);
+    vertical   = log_studentt(x[1:end-1,:]-x[2:end,:],1.0,1.0);
+    # sum over all vertical and horizontal potentials
+    value = horizontal[1] + vertical[1]
+    # as the result is 1 row/column short due to indexing... replace this with zeros
+    # expand vertical and horizontal to the orignal size and add respective gradient potentials
+    grad_h = hcat(horizontal[2], zeros(height,1)) - hcat(zeros(height,1), horizontal[2])
+    grad_v = vcat(vertical[2], zeros(1,width)) - vcat(zeros(1,width), vertical[2])
+    grad = grad_h + grad_v
+
+    return  value::Float64, grad::Array{Float64,2}
+end
+
+
+# Evaluate stereo log likelihood.
+# Set: Alpha = 1.0, Sigma = 0.004
+function stereo_log_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+    # dims
+    height,width = size(im0)
+    # shift im1 for disparity (need for likelihood)
+    im1_x = shift_disparity(im1,x)
+    # compute likelihood
+    log_likelihood = log_studentt(im0-im1_x, 0.004, 1.0);
+    # value is than easy:
+    value = log_likelihood[1]
+    # for the gradient we he have do the Central Differences
+    im1_g = 0.5 * (hcat(zeros(height,2), im1) - hcat(im1, zeros(height,2)))
+    # and shift this by the disparity
+    im1_g_x = shift_disparity(im1_g[:, 2 : end-1], x)
+    #Followingly we can use the formula from Lecture 3 Slide 62
+    grad =  - log_likelihood[2] .* im1_g_x
+
+    return value::Float64, grad::Array{Float64,2}
+end
+
+# Evaluate stereo posterior
+function stereo_log_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+    # get prior
+    prior = stereo_log_prior(x)
+    # get likelihood
+    likelihood = stereo_log_likelihood(x,im0,im1)
+    # add values of prior ang likelihood
+    log_posterior = prior[1] + likelihood[1]
+    # add gradient of prior ang likelihood
+    log_posterior_grad = prior[2] + likelihood[2]
+
+    return log_posterior::Float64, log_posterior_grad::Array{Float64,2}
+end
+
+
+# Run stereo algorithm using gradient ascent or sth similar
+function stereo(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+    x = copy(x0);
+
+    function value(x)
+        return -stereo_log_posterior(x, im0,im1)[1];
+    end
+
+    function gradient(last, x)
+        dx = -stereo_log_posterior(reshape(x, size(im0)), im0,im1)[2];
+        last[:] = dx[:];
+    end
+
+    opt = Optim.Options(iterations=50, show_trace=true, allow_f_increases=true);
+    result = optimize(value, gradient, x0,GradientDescent(), opt);
+    x = reshape(Optim.minimizer(result), size(im0))
+
+    return x::Array{Float64,2}
+end
+################# Help Functions form Assignment 1 ######################
+# Shift all pixels of i1 to the right by the value of gt
+# Actually had to edit this Function to be consistent when sampled outside of image
+function shift_disparity(i1::Array{Float64,2}, gt::Array{Float64,2})
+    max_disparity = Int64.(ceil(maximum(abs.(gt))));
+    id = zeros(size(i1,1),size(i1,2))
+    i1_pad = [zeros(size(i1,1), max_disparity) i1 zeros(size(i1,1), max_disparity)]
+    for i = 1:size(i1,1)
+        for j = 1:size(i1,2)
+            #apply disparity as shift to the other sides camera
+            id[i,j]= i1_pad[i, Int64.(round(j-gt[i,j] + max_disparity)) ]
+        end
+    end
+    @assert size(id) == size(i1)
+    return id::Array{Float64,2}
+end
+
+function show_3Plot(left,right,disparity,title_l, title_r, title_d)
+    PyPlot.subplot(1,3,1);
+    PyPlot.imshow(left,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_l);
+    PyPlot.subplot(1,3,2);
+    PyPlot.imshow(right,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_r);
+    PyPlot.subplot(1,3,3);
+    PyPlot.imshow(disparity,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_d);
+    fig1 = PyPlot.gcf();
+    display(fig1);
+end
+
+################# CV 1 code #########################################
+# Create a binomial filter
+function makebinomialfilter(size::Array{Int,2})
+
+    ## Calculate weights with Pascals Triangle
+    # w^k = pascal triangle
+    weights = zeros(size[1])
+    for i in 1 : size[1]
+        weights[i] = binomial(size[1]-1, i-1)
+    end
+    # print(weights)
+
+    # Make filter
+    f = weights * weights'
+    # sum(f) = sum l=0 to N: w^l
+    f = f ./ sum(f)
+    return f::Array{Float64,2}
+end
+
+# Downsample an image by a factor of 2
+function downsample2(A::Array{Float64,2})
+    D = A[1:2:end, 1:2:end]
+  return D::Array{Float64,2}
+end
+
+# Upsample an image by a factor of 2
+function upsample2(A::Array{Float64,2},fsize::Array{Int,2})
+
+    height2 = 2* size(A)[1]
+    width2 = 2* size(A)[2]
+
+    A2 = zeros(height2, width2)
+
+    ## Fill Columns and Rows between old ones with zeros
+    for i in 1 : floor(Int, height2/2)
+        for j in 1 : floor(Int, width2/2)
+            A2[i*2-1,j*2-1] = A[i, j]
+            A2[i*2, j*2] = 0
+        end
+    end
+
+    ## Make binomialfilter with fsize
+    f = makebinomialfilter(fsize)
+
+    ## filter A2 with filter
+    U = imfilter(A2, f, "symmetric")
+    ## apply 4 scale
+    U = 4 * U
+  return U::Array{Float64,2}
+end
+
+
 function problem4()
     #  Up to you...
 
