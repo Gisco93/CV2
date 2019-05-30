@@ -51,7 +51,9 @@ function mrf_log_prior(x::Array{Float64,2})
     p_horizontal =  [log_studentt(x[:,2:end]-x[:,1:end-1]) zeros(height,1)];
     p_vertical =    [log_studentt(x[2:end,:]-x[1:end-1,:]); zeros(1,width)];
     # sum over all vertcal and horizontal potentials
-    logp = sum((hcat(p_horizontal , zeros(height,1)) + p_vertical))
+    # its not nessacary to padd the result back to the Original size
+    # as padding wir 0 doesnt change the sum
+    logp = sum(p_horizontal +  p_vertical)
     return logp::Float64
 end
 
