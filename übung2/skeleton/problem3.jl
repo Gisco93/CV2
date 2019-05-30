@@ -4,8 +4,7 @@ push!(LOAD_PATH, pwd())
 include("problem2.jl");
 using Optim
 using LineSearches
-using Interpolations
-using Images
+
 
 
 

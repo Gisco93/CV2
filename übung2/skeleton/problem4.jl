@@ -1,6 +1,22 @@
 
-function log_studentt(x::Array{Float64,2}, alpha::Float64, sigma::Float64)
-
+function GAR(x::Array{Float64,2}, alpha::Float64, c::Float64)
+    value = 0
+    grad = 0
+    if(alpha == 2){
+        #1/2 (x/c)^2
+        value = 0.5 .*()( x ./ c).*( x ./ c))
+        # (x/c)^2
+        grad = 
+    } elif(alpha == 0) {
+        #log(1/2 (x/c)^2 + 1)
+        value = log.(0.5 .*( x ./ c) .+ 1.0)
+    } elif(alpha == -Inf) {
+        # 1- exp( - 1/2 (x/c)^2)
+        value = 1 .- exp2(-0.5 .* (x ./ c).*(x ./ c))
+    } else {
+        # abs(alpha - 2) / alpha * (( (x/c)^2 / abs(alpha - 2)) - 1.0)
+        value = abs(alpha - 2) / alpha * (( exp2(x/c)/ abs(alpha - 2)) - 1.0)
+    }
     value = sum(-alpha .* log.(1.0 .+ x.*x ./ (2*sigma*sigma)))
     grad = -2 * alpha .* x ./ (2*sigma*sigma .+ x.*x);
 
