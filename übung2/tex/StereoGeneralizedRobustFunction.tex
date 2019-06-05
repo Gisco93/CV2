@@ -7,8 +7,18 @@
 
 
 \subsection{Stereo with a generalized robust function (10 Points)}
-\setcounter{subsubsection}{4}
+\setcounter{subsubsection}{3}
 Everything else is in code.
-\subsubsection{? Point/s}
+\subsubsection{To obtain better results, also apply an image pyramid similar to Problem 3. (? Point/s)}
+Tuned the parameters to fit the normal algorithmen and therefore doesn't show better results.\\
+\subsubsection{Based on your experiments, what recommendations can you give for choosing the parameters $\alpha$ and $c$? How does each parameter influence the result? How did you go about finding good parameters (?? Point/s)}
+For prior:  $\alpha = 0.5$ and $c=10.0$ or ($\alpha = 3.0$ and $c=3.0$)\\
+For likelihood: $\alpha = 0.5$ and $c=10.0$ or  ($\alpha = 3.0$ and $c=4.0$)\\
 
-\subsubsection{? Point/s}
+$c$ does manly influences how much influence an outliner has and therefore the results is smoothed. This limits the amount of detail we can e.g. from the writing on the white board. As it is small values(e.g. 1) smooth more and bigger value (e.g. 10) for sharper edges\\
+$\alpha$ efects seems quite small. Result with smaller values seem to have less depth to it, but also less grainyness.\\
+
+We just started playing around with alpha and keep c fixed and then switch it. repeat sometimes but didnt have anything bigger strategy than our intuition.\\
+
+\subsubsection{In general, using the generalized robust function and its gradients will not allow us to learn the shape parameters which is why we tune them manually. Why is it that gradient-based optimization using Eqs. (8) and (9) is not applicable here to obtain good shape parameters?(?? Point/s)}
+The proposed loss function approximates many different loss function and interpolates inbetween them. This means we would need to fix $\alpha$ to find the perfect $c$, and in next turn fix $c$ and do the same for $\alpha$. which means we would have the perfect $c$ anymore. This result is because its a non convex function and we may only get stuck in a local optima.\\ It is better to use the different properties of the incorpated loss functions by change the $\alpha$ between iteration and do as thex describe: we can initialize $\alpha$  such that our loss is convex and then gradually reduce $\alpha$  (and therefore reduce convexity and increase robustness) during optimization, thereby enabling robust estimation that (often) avoids local minima.\\

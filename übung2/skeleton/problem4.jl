@@ -40,8 +40,8 @@ function stereo_GAR_prior(x::Array{Float64,2})
     height,width = size(x)
     # compute log over vertical and horizontal disparities
 
-    horizontal = GAR(x[:,1:end-1]-x[:,2:end],3.0,3.0);
-    vertical   = GAR(x[1:end-1,:]-x[2:end,:],3.0,3.0);
+    horizontal = GAR(x[:,1:end-1]-x[:,2:end],3.0,10.0);
+    vertical   = GAR(x[1:end-1,:]-x[2:end,:],3.0,10.0);
     # sum over all vertical and horizontal potentials
     value = horizontal[1] + vertical[1]
     # as the result is 1 row/column short due to indexing... replace this with zeros
@@ -62,7 +62,7 @@ function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    GAR_likelihood = GAR(im0-im1_x,3.0, 4.0);
+    GAR_likelihood = GAR(im0-im1_x,3.0, 10.0);
     # value is than easy:
     value = GAR_likelihood[1]
     # # for the gradient we he have do the Central Differences
@@ -234,22 +234,22 @@ function problem4()
     # result_coarse3 = stereo_GAR(gt_coarse3, im0_coarse3, im1_coarse3);
     # # show_3Plot(result_coarse3-gt_coarse3, gt_coarse3, result_coarse3, "Diff", "gt coarse8 to fine", "Opt result")
 
-    im0_coarse2 = downsample2(downsample2(im0))
-    im1_coarse2 = downsample2(downsample2(im1))
-    gt_coarse2 = downsample2(downsample2(gt))
-    result_coarse2 = stereo_GAR(gt_coarse2, im0_coarse2, im1_coarse2);
-    # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
-
-    im0_coarse1 = downsample2(im0)
-    im1_coarse1 = downsample2(im1)
-    gt_coarse1 = upsample2(result_coarse2,[3 3])
-    result_coarse1 = stereo_GAR(gt_coarse1, im0_coarse1, im1_coarse1);
-    # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
-
-    gt_coarse0 = upsample2(result_coarse1,[3 3])
-    result_fine0 = stereo_GAR(gt_coarse0, im0, im1);
-    # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
-
-    show_3Plot(result_fine0, result_coarse1, result_coarse2, "Opt result", "Opt result/2", "Opt result/4")
+    # im0_coarse2 = downsample2(downsample2(im0))
+    # im1_coarse2 = downsample2(downsample2(im1))
+    # gt_coarse2 = downsample2(downsample2(gt))
+    # result_coarse2 = stereo_GAR(gt_coarse2, im0_coarse2, im1_coarse2);
+    # # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
+    #
+    # im0_coarse1 = downsample2(im0)
+    # im1_coarse1 = downsample2(im1)
+    # gt_coarse1 = upsample2(result_coarse2,[3 3])
+    # result_coarse1 = stereo_GAR(gt_coarse1, im0_coarse1, im1_coarse1);
+    # # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
+    #
+    # gt_coarse0 = upsample2(result_coarse1,[3 3])
+    # result_fine0 = stereo_GAR(gt_coarse0, im0, im1);
+    # # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
+    #
+    # show_3Plot(result_fine0, result_coarse1, result_coarse2, "Opt result", "Opt result/2", "Opt result/4")
 
 end

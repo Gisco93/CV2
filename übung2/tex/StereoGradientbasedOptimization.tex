@@ -7,6 +7,9 @@
 
 
 \subsection{Stereo with gradient-based optimization (17 Points)}
-\setcounter{subsubsection}{5}
 Everything else is in code.
 \subsubsection{4 Points}
+When initailized with a constant disparity map the struggels to find another map which does not increase the function value as the prior increases in absolut value. It therefore only detects the edges which are farest in the backgroud and the nearest on the head. The rest stays constant.\\
+The random disparity does not converge to something meaningful as its to far away from such a solution, as neighbouring pixels are incompatible. It can be noticed that so of the more compatible pixel merge together but to complete this would take very long.\\
+The ground truth converges to something more blurry until it gets closer to the constant map and therefore loses it usefulness. This is probably because of the brightness constancy assumption we modeled in our prior which has the highest score when its constant and therefore our gradient wants to converge to a smoother map, which very smooth and does not account for object boundaries.\\
+

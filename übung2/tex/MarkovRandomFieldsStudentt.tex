@@ -8,5 +8,18 @@
 
 \subsection{Markov random fields with Student-t potentials (10 Points)}
 Tasks 1-4 within code
-\setcounter{subsubsection}{4}
+\setcounter{subsubsection}{1}
+\subsubsection{1 Point}
+As printed out:
+gt log prior:                   $-9928.589720178397$\\
+\subsubsection{2 Points}
+As printed out:
+random disparity log prior:    $ -478661.4937203116$\\
+\subsubsection{2 Points}
+As printed out:
+constant disparity log prior:  $ 0.0$\\
 \subsubsection{3 Points}
+As we use MRF model, the potentialfunction expresses the compatibility between neighour pixels.\\
+Therefore our random map has the lowest score as most neighbours don't fit each ohter.\\ 
+The log probability of constant map ist the lowest, because neigbouring pixels are as close together as they can get and we want them to be localy smooth.\\
+The ground truth lies between those log- priors as its not constant, therefore not maximally locally smooth and may have some small artifacts.\\
