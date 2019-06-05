@@ -3,6 +3,7 @@ push!(LOAD_PATH, pwd())
 include("problem2.jl");
 using Optim
 using LineSearches
+using Images
 
 function GAR(x::Array{Float64,2}, alpha::Float64, c::Float64)
     value = 0
@@ -35,13 +36,13 @@ end
 
 # Evaluate stereo log prior.
 # Set: alpha=1.0, sigma=1.0
-function stereo_GAR_prior(x::Array{Float64,2})
+function stereo_GAR_prior(x::Array{Float64,2}, alpha::Float64, c::Float64)
 
     height,width = size(x)
     # compute log over vertical and horizontal disparities
 
-    horizontal = GAR(x[:,1:end-1]-x[:,2:end],3.0,10.0);
-    vertical   = GAR(x[1:end-1,:]-x[2:end,:],3.0,10.0);
+    horizontal = GAR(x[:,1:end-1]-x[:,2:end], alpha, c);
+    vertical   = GAR(x[1:end-1,:]-x[2:end,:], alpha, c);
     # sum over all vertical and horizontal potentials
     value = horizontal[1] + vertical[1]
     # as the result is 1 row/column short due to indexing... replace this with zeros
@@ -56,13 +57,13 @@ end
 
 # Evaluate stereo log likelihood.
 # Set: Alpha = 1.0, Sigma = 0.004
-function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2}, alpha::Float64, c::Float64)
     # dims
     height,width = size(im0)
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    GAR_likelihood = GAR(im0-im1_x,3.0, 10.0);
+    GAR_likelihood = GAR(im0-im1_x, alpha, c);
     # value is than easy:
     value = GAR_likelihood[1]
     # # for the gradient we he have do the Central Differences
@@ -76,11 +77,11 @@ function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
 end
 
 # Evaluate stereo posterior
-function stereo_GAR_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2}, alpha::Float64, c::Float64)
     # get prior
-    prior = stereo_GAR_prior(x)
+    prior = stereo_GAR_prior(x, alpha, c)
     # get likelihood
-    likelihood = stereo_GAR_likelihood(x,im0,im1)
+    likelihood = stereo_GAR_likelihood(x,im0,im1, alpha, c)
     # add values of prior ang likelihood
     log_posterior = prior[1] + likelihood[1]
     # add gradient of prior ang likelihood
@@ -91,20 +92,20 @@ end
 
 
 # Run stereo algorithm using gradient ascent or sth similar
-function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2}, alpha::Float64, c::Float64)
     x = copy(x0);
     #define a value function for Optim
     function value(x)
-        return stereo_GAR_posterior(x, im0,im1)[1];
+        return stereo_GAR_posterior(x, im0,im1, alpha, c)[1];
     end
     #define a gradient function for Optim
     function gradient(last, x)
-        dx = stereo_GAR_posterior(reshape(x, size(im0)), im0,im1)[2];
+        dx = stereo_GAR_posterior(reshape(x, size(im0)), im0,im1, alpha, c)[2];
         last[:] = dx[:];
     end
     # here we just reused what was used in probem3
     # as results from fitting alpha and c where quite satisfying we didn't change it
-    opt = Optim.Options(iterations=50, show_trace=false);
+    opt = Optim.Options(iterations=100, show_trace=false);
     result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
@@ -163,6 +164,31 @@ function makebinomialfilter(size::Array{Int,2})
     return f::Array{Float64,2}
 end
 
+function show_5Plot(coarse0,coarse1,coarse2,coarse3,coarse4,title_0, title_1, title_2, title_3, title_4)
+    PyPlot.subplot(1,5,1);
+    PyPlot.imshow(coarse0,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_0);
+    PyPlot.subplot(1,5,2);
+    PyPlot.imshow(coarse1,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_1);
+    PyPlot.subplot(1,5,3);
+    PyPlot.imshow(coarse2,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_2);
+    PyPlot.subplot(1,5,4);
+    PyPlot.imshow(coarse3,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_3);
+    PyPlot.subplot(1,5,5);
+    PyPlot.imshow(coarse4,"gray");
+    PyPlot.axis("off");
+    PyPlot.title(title_4);
+    fig1 = PyPlot.gcf();
+    display(fig1);
+end
+
 # Downsample an image by a factor of 2
 function downsample2(A::Array{Float64,2})
     D = A[1:2:end, 1:2:end]
@@ -202,6 +228,12 @@ function problem4()
 
     # use problem 2's load_data
     im0, im1, gt = load_data()
+    # alpha = 3
+    # c = 3
+
+    alpha = 0.5
+    c = 10.0
+
     # THIS HURTS MY EYES please specify function input as Tuple{Int64,Int64} as its the return type of the size function
     disparity_size = zeros(Int64, 2,1);
     disparity_size[1] = size(gt,1);
@@ -217,39 +249,48 @@ function problem4()
     # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
     #
     # #Display stereo: Initialized with gt
-    result = stereo_GAR(gt, im0, im1);
-    show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
+    # result = stereo_GAR(gt, im0, im1, alpha, c);
+    # show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
 
+
+
+    alpha = 10.0
+    c = 1.0
 
     ## Coarse to fine estimation..
-    # im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
-    # im1_coarse4 = downsample2(downsample2(downsample2(downsample2(im1))))
-    # gt_coarse4 = downsample2(downsample2(downsample2(downsample2(gt))))
-    # result_coarse4 = stereo_GAR(gt_coarse4, im0_coarse4, im1_coarse4);
-    # # show_3Plot(result_coarse4-gt_coarse4, gt_coarse4, result_coarse4, "Diff", "gt coarse16 to fine", "Opt result")
-    #
-    # im0_coarse3 = downsample2(downsample2(downsample2(im0)))
-    # im1_coarse3 = downsample2(downsample2(downsample2(im1)))
-    # gt_coarse3 = downsample2(downsample2(downsample2(gt)))
-    # result_coarse3 = stereo_GAR(gt_coarse3, im0_coarse3, im1_coarse3);
-    # # show_3Plot(result_coarse3-gt_coarse3, gt_coarse3, result_coarse3, "Diff", "gt coarse8 to fine", "Opt result")
+    im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
+    im1_coarse4 = downsample2(downsample2(downsample2(downsample2(im1))))
+    gt_coarse4 = downsample2(downsample2(downsample2(downsample2(gt))))
+    result_coarse4 = stereo_GAR(gt_coarse4, im0_coarse4, im1_coarse4, alpha, c);
+    # show_3Plot(result_coarse4-gt_coarse4, gt_coarse4, result_coarse4, "Diff", "gt coarse16 to fine", "Opt result")
 
+    im0_coarse3 = downsample2(downsample2(downsample2(im0)))
+    im1_coarse3 = downsample2(downsample2(downsample2(im1)))
+    gt_coarse3 = downsample2(downsample2(downsample2(gt)))
+    result_coarse3 = stereo_GAR(gt_coarse3, im0_coarse3, im1_coarse3, alpha, c);
+     show_3Plot(result_coarse4, result_coarse3, result_coarse3, "16", "8", "8")
+
+    # alpha = 1.0
+    # c = 0.01
+    #
     # im0_coarse2 = downsample2(downsample2(im0))
     # im1_coarse2 = downsample2(downsample2(im1))
     # gt_coarse2 = downsample2(downsample2(gt))
-    # result_coarse2 = stereo_GAR(gt_coarse2, im0_coarse2, im1_coarse2);
+    # result_coarse2 = stereo_GAR(gt_coarse2, im0_coarse2, im1_coarse2, alpha, c);
     # # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
     #
     # im0_coarse1 = downsample2(im0)
     # im1_coarse1 = downsample2(im1)
     # gt_coarse1 = upsample2(result_coarse2,[3 3])
-    # result_coarse1 = stereo_GAR(gt_coarse1, im0_coarse1, im1_coarse1);
+    # result_coarse1 = stereo_GAR(gt_coarse1, im0_coarse1, im1_coarse1, alpha, c);
     # # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
     #
     # gt_coarse0 = upsample2(result_coarse1,[3 3])
-    # result_fine0 = stereo_GAR(gt_coarse0, im0, im1);
+    # result_fine0 = stereo_GAR(gt_coarse0, im0, im1, alpha, c);
     # # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
     #
-    # show_3Plot(result_fine0, result_coarse1, result_coarse2, "Opt result", "Opt result/2", "Opt result/4")
+    # show_5Plot(result_fine0, result_coarse1, result_coarse2,result_coarse3,result_coarse4, "Opt result", "Opt result/2", "Opt result/4", "Opt result/8", "Opt result/16")
+    #
+
 
 end
