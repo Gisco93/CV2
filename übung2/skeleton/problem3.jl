@@ -9,8 +9,9 @@ using LineSearches
 
 
 function log_studentt(x::Array{Float64,2}, alpha::Float64, sigma::Float64)
-
+    # log(student t)
     value = sum(-alpha .* log.(1.0 .+ x.*x ./ (2*sigma*sigma)))
+    # gradient log(studentt)
     grad = -2 * alpha .* x ./ (2*sigma*sigma .+ x.*x);
 
     return value::Float64, grad::Array{Float64,2}
@@ -32,6 +33,7 @@ function stereo_log_prior(x::Array{Float64,2})
     # expand vertical and horizontal to the orignal size and add respective gradient potentials
     grad_h = hcat(horizontal[2], zeros(height,1)) - hcat(zeros(height,1), horizontal[2])
     grad_v = vcat(vertical[2], zeros(1,width)) - vcat(zeros(1,width), vertical[2])
+    # as they are padded we can add vertical and horizontal gradient
     grad = grad_h + grad_v
 
     return  value::Float64, grad::Array{Float64,2}
@@ -78,17 +80,22 @@ end
 function stereo(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
     x = copy(x0);
 
+    #define a value function for Optim
     function value(x)
         return -stereo_log_posterior(x, im0,im1)[1];
     end
-
+    #define a gradient function for Optim
     function gradient(last, x)
         dx = -stereo_log_posterior(reshape(x, size(im0)), im0,im1)[2];
         last[:] = dx[:];
     end
     # till convergance would be nice but ain't nobody got time for that. So max iterations=50
+    # when you run more iteration it gets first mor "blurry" til its just a constant grey map => not desired
     opt = Optim.Options(iterations=50, show_trace=true);
     # could also be run with linesearch=StrongWolfe() which converges the fastest
+    # BFGS: OOM
+    # LBFGS: super fast but sometimes takes hough jumps => may return something totally different
+    # ConjugateGradient: faster convergernace to constant grey map
     result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
@@ -215,17 +222,17 @@ function problem3()
     rand_disparity = random_disparity(disparity_size);
     const_disparity = constant_disparity(disparity_size);
     # # # Display stereo: Initialized with constant 8's
-    # result = stereo(const_disparity, im0, im1);
-    # show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+    result = stereo(const_disparity, im0, im1);
+    show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
 
     # # Display stereo: Initialized with noise in [0,14]
-    # result = stereo(rand_disparity, im0, im1);
-    # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
+    result = stereo(rand_disparity, im0, im1);
+    show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
 
 
     # Display stereo: Initialized with gt
-    # result = stereo(gt, im0, im1);
-    # show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
+    result = stereo(gt, im0, im1);
+    show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
 
     ## Coarse to fine estimation..
     im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))

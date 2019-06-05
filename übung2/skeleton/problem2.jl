@@ -4,6 +4,7 @@ using PyPlot
 
 
 # Load Tsukuba disparity dataset
+#use old function from Assignment 1
 function load_data()
     img0 = PyPlot.imread("i0.png");
     img1 = PyPlot.imread("i1.png");

@@ -28,10 +28,7 @@ function GAR(x::Array{Float64,2}, alpha::Float64, c::Float64)
         # (x / c^2) * ((x / c)^2  / abs(alpha - 2.0) + 1.0) ^ (alpha / 2.0))
         grad = (x ./ c^2) .* ((((x./c).^2  ./ abs(alpha - 2.0)) .+ 1.0).^(alpha/2.0 - 1.0))
     end
-    # println()
-    # println(prod(value))
     value = sum(value)
-    # println(value)
     return value::Float64, grad::Array{Float64,2}
 end
 
@@ -96,18 +93,19 @@ end
 # Run stereo algorithm using gradient ascent or sth similar
 function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
     x = copy(x0);
-
+    #define a value function for Optim
     function value(x)
         return stereo_GAR_posterior(x, im0,im1)[1];
     end
-
+    #define a gradient function for Optim
     function gradient(last, x)
         dx = stereo_GAR_posterior(reshape(x, size(im0)), im0,im1)[2];
         last[:] = dx[:];
     end
-
-    opt = Optim.Options(iterations=50, show_trace=true);#, allow_f_increases=true);
-    result = optimize(value, gradient, x0,GradientDescent(), opt);
+    # here we just reused what was used in probem3
+    # as results from fitting alpha and c where quite satisfying we didn't change it
+    opt = Optim.Options(iterations=50, show_trace=false);
+    result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
     return x::Array{Float64,2}
@@ -194,6 +192,7 @@ function upsample2(A::Array{Float64,2},fsize::Array{Int,2})
     U = imfilter(A2, f, "symmetric")
     ## apply 4 scale
     U = 4 * U
+
   return U::Array{Float64,2}
 end
 
@@ -209,15 +208,48 @@ function problem4()
     disparity_size[2] = size(gt,2);
     rand_disparity = random_disparity(disparity_size);
     const_disparity = constant_disparity(disparity_size);
-    # # # Display stereo: Initialized with constant 8's
+    # # Display stereo: Initialized with constant 8's
     # result = stereo(const_disparity, im0, im1);
     # show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+    #
     # # Display stereo: Initialized with noise in [0,14]
     # result = stereo(rand_disparity, im0, im1);
     # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
-
-
-    #Display stereo: Initialized with gt
+    #
+    # #Display stereo: Initialized with gt
     result = stereo_GAR(gt, im0, im1);
     show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
+
+
+    ## Coarse to fine estimation..
+    # im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
+    # im1_coarse4 = downsample2(downsample2(downsample2(downsample2(im1))))
+    # gt_coarse4 = downsample2(downsample2(downsample2(downsample2(gt))))
+    # result_coarse4 = stereo_GAR(gt_coarse4, im0_coarse4, im1_coarse4);
+    # # show_3Plot(result_coarse4-gt_coarse4, gt_coarse4, result_coarse4, "Diff", "gt coarse16 to fine", "Opt result")
+    #
+    # im0_coarse3 = downsample2(downsample2(downsample2(im0)))
+    # im1_coarse3 = downsample2(downsample2(downsample2(im1)))
+    # gt_coarse3 = downsample2(downsample2(downsample2(gt)))
+    # result_coarse3 = stereo_GAR(gt_coarse3, im0_coarse3, im1_coarse3);
+    # # show_3Plot(result_coarse3-gt_coarse3, gt_coarse3, result_coarse3, "Diff", "gt coarse8 to fine", "Opt result")
+
+    im0_coarse2 = downsample2(downsample2(im0))
+    im1_coarse2 = downsample2(downsample2(im1))
+    gt_coarse2 = downsample2(downsample2(gt))
+    result_coarse2 = stereo_GAR(gt_coarse2, im0_coarse2, im1_coarse2);
+    # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
+
+    im0_coarse1 = downsample2(im0)
+    im1_coarse1 = downsample2(im1)
+    gt_coarse1 = upsample2(result_coarse2,[3 3])
+    result_coarse1 = stereo_GAR(gt_coarse1, im0_coarse1, im1_coarse1);
+    # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
+
+    gt_coarse0 = upsample2(result_coarse1,[3 3])
+    result_fine0 = stereo_GAR(gt_coarse0, im0, im1);
+    # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
+
+    show_3Plot(result_fine0, result_coarse1, result_coarse2, "Opt result", "Opt result/2", "Opt result/4")
+
 end
