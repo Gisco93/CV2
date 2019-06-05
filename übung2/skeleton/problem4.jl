@@ -1,45 +1,57 @@
+# Load problem2.jl for providing 'load_data'
+push!(LOAD_PATH, pwd())
+include("problem2.jl");
+using Optim
+using LineSearches
 
 function GAR(x::Array{Float64,2}, alpha::Float64, c::Float64)
     value = 0
     grad = 0
-    if(alpha == 2){
+    if(alpha == 2)
         #1/2 (x/c)^2
-        value = 0.5 .*()( x ./ c).*( x ./ c))
+        value = 0.5 .*(( x ./ c).^2)
         # (x/c)^2
-        grad = 
-    } elif(alpha == 0) {
+        grad = x ./ (c^2)
+    elseif alpha == 0
         #log(1/2 (x/c)^2 + 1)
-        value = log.(0.5 .*( x ./ c) .+ 1.0)
-    } elif(alpha == -Inf) {
+        value = log.(0.5 .*(( x ./ c).^2) .+ 1.0)
+        # 2x/(x^2 + 2* c^2)
+        grad = (2.0 .*x) ./ (x.^2 .+ 2.0*c^2)
+    elseif alpha == -Inf
         # 1- exp( - 1/2 (x/c)^2)
-        value = 1 .- exp2(-0.5 .* (x ./ c).*(x ./ c))
-    } else {
-        # abs(alpha - 2) / alpha * (( (x/c)^2 / abs(alpha - 2)) - 1.0)
-        value = abs(alpha - 2) / alpha * (( exp2(x/c)/ abs(alpha - 2)) - 1.0)
-    }
-    value = sum(-alpha .* log.(1.0 .+ x.*x ./ (2*sigma*sigma)))
-    grad = -2 * alpha .* x ./ (2*sigma*sigma .+ x.*x);
-
+        value = 1 .- exp(-0.5 .* ((x ./ c)).^2)
+        # (x/c)^2 * exp(- 1/2 (x/c)^2)
+        grad = (x ./ c^2) .* exp(-0.5 .*(( x ./ c).^2))
+    else
+        # abs(alpha - 2) / alpha * (((x / c)^2 / abs(alpha - 2) + 1) ^ (alpha / 2) - 1.0)
+        value = (abs(alpha - 2.0) / alpha) .* (((((x./c).^2  ./ abs(alpha - 2.0)) .+ 1.0).^(alpha/2.0)) .+ 1.0)
+        # (x / c^2) * ((x / c)^2  / abs(alpha - 2.0) + 1.0) ^ (alpha / 2.0))
+        grad = (x ./ c^2) .* ((((x./c).^2  ./ abs(alpha - 2.0)) .+ 1.0).^(alpha/2.0 - 1.0))
+    end
+    # println()
+    # println(prod(value))
+    value = sum(value)
+    # println(value)
     return value::Float64, grad::Array{Float64,2}
 end
 
 
 # Evaluate stereo log prior.
 # Set: alpha=1.0, sigma=1.0
-function stereo_log_prior(x::Array{Float64,2})
+function stereo_GAR_prior(x::Array{Float64,2})
 
     height,width = size(x)
     # compute log over vertical and horizontal disparities
 
-    horizontal = log_studentt(x[:,1:end-1]-x[:,2:end],1.0,1.0);
-    vertical   = log_studentt(x[1:end-1,:]-x[2:end,:],1.0,1.0);
+    horizontal = GAR(x[:,1:end-1]-x[:,2:end],3.0,3.0);
+    vertical   = GAR(x[1:end-1,:]-x[2:end,:],3.0,3.0);
     # sum over all vertical and horizontal potentials
     value = horizontal[1] + vertical[1]
     # as the result is 1 row/column short due to indexing... replace this with zeros
     # expand vertical and horizontal to the orignal size and add respective gradient potentials
     grad_h = hcat(horizontal[2], zeros(height,1)) - hcat(zeros(height,1), horizontal[2])
     grad_v = vcat(vertical[2], zeros(1,width)) - vcat(zeros(1,width), vertical[2])
-    grad = grad_h + grad_v
+    grad = grad_h .+ grad_v
 
     return  value::Float64, grad::Array{Float64,2}
 end
@@ -47,54 +59,54 @@ end
 
 # Evaluate stereo log likelihood.
 # Set: Alpha = 1.0, Sigma = 0.004
-function stereo_log_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
     # dims
     height,width = size(im0)
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    log_likelihood = log_studentt(im0-im1_x, 0.004, 1.0);
+    GAR_likelihood = GAR(im0-im1_x,3.0, 4.0);
     # value is than easy:
-    value = log_likelihood[1]
-    # for the gradient we he have do the Central Differences
+    value = GAR_likelihood[1]
+    # # for the gradient we he have do the Central Differences
     im1_g = 0.5 * (hcat(zeros(height,2), im1) - hcat(im1, zeros(height,2)))
-    # and shift this by the disparity
+    # # and shift this by the disparity
     im1_g_x = shift_disparity(im1_g[:, 2 : end-1], x)
-    #Followingly we can use the formula from Lecture 3 Slide 62
-    grad =  - log_likelihood[2] .* im1_g_x
+    # Followingly we can use the formula from Lecture 3 Slide 62
+    grad = - GAR_likelihood[2] .+ im1_g_x
 
     return value::Float64, grad::Array{Float64,2}
 end
 
 # Evaluate stereo posterior
-function stereo_log_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
     # get prior
-    prior = stereo_log_prior(x)
+    prior = stereo_GAR_prior(x)
     # get likelihood
-    likelihood = stereo_log_likelihood(x,im0,im1)
+    likelihood = stereo_GAR_likelihood(x,im0,im1)
     # add values of prior ang likelihood
     log_posterior = prior[1] + likelihood[1]
     # add gradient of prior ang likelihood
-    log_posterior_grad = prior[2] + likelihood[2]
+    log_posterior_grad = prior[2] .+ likelihood[2]
 
     return log_posterior::Float64, log_posterior_grad::Array{Float64,2}
 end
 
 
 # Run stereo algorithm using gradient ascent or sth similar
-function stereo(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
+function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,2})
     x = copy(x0);
 
     function value(x)
-        return -stereo_log_posterior(x, im0,im1)[1];
+        return stereo_GAR_posterior(x, im0,im1)[1];
     end
 
     function gradient(last, x)
-        dx = -stereo_log_posterior(reshape(x, size(im0)), im0,im1)[2];
+        dx = stereo_GAR_posterior(reshape(x, size(im0)), im0,im1)[2];
         last[:] = dx[:];
     end
 
-    opt = Optim.Options(iterations=50, show_trace=true, allow_f_increases=true);
+    opt = Optim.Options(iterations=50, show_trace=true);#, allow_f_increases=true);
     result = optimize(value, gradient, x0,GradientDescent(), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
@@ -189,5 +201,23 @@ end
 function problem4()
     #  Up to you...
 
+    # use problem 2's load_data
+    im0, im1, gt = load_data()
+    # THIS HURTS MY EYES please specify function input as Tuple{Int64,Int64} as its the return type of the size function
+    disparity_size = zeros(Int64, 2,1);
+    disparity_size[1] = size(gt,1);
+    disparity_size[2] = size(gt,2);
+    rand_disparity = random_disparity(disparity_size);
+    const_disparity = constant_disparity(disparity_size);
+    # # # Display stereo: Initialized with constant 8's
+    # result = stereo(const_disparity, im0, im1);
+    # show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+    # # Display stereo: Initialized with noise in [0,14]
+    # result = stereo(rand_disparity, im0, im1);
+    # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
 
+
+    #Display stereo: Initialized with gt
+    result = stereo_GAR(gt, im0, im1);
+    show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
 end
