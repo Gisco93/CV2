@@ -67,7 +67,7 @@ function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
     # value is than easy:
     value = GAR_likelihood[1]
     # # for the gradient we he have do the Central Differences
-    im1_g = 0.5 * (hcat(zeros(height,2), im1) - hcat(im1, zeros(height,2)))
+    im1_g = 0.5 .* (hcat(zeros(height,2), im1) .- hcat(im1, zeros(height,2)))
     # # and shift this by the disparity
     im1_g_x = shift_disparity(im1_g[:, 2 : end-1], x)
     # Followingly we can use the formula from Lecture 3 Slide 62
@@ -105,7 +105,7 @@ function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Floa
     end
     # here we just reused what was used in probem3
     # as results from fitting alpha and c where quite satisfying we didn't change it
-    opt = Optim.Options(iterations=100, show_trace=true, allow_f_increases=true);
+    opt = Optim.Options(iterations=500, show_trace=false);
     result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
     x = clamp.(x, 0, 14)

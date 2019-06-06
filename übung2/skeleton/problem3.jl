@@ -49,7 +49,7 @@ function stereo_log_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    log_likelihood = log_studentt(im0-im1_x,1.0, 0.004);
+    log_likelihood = log_studentt(im0-im1_x, 1.0, 0.004);
     # value is than easy:
     value = log_likelihood[1]
     # for the gradient we he have do the Central Differences
@@ -69,7 +69,7 @@ function stereo_log_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::A
     # get likelihood
     likelihood = stereo_log_likelihood(x,im0,im1)
     # add values of prior ang likelihood
-    log_posterior = prior[1] + likelihood[1]
+    log_posterior = prior[1] .+ likelihood[1]
     # add gradient of prior ang likelihood
     log_posterior_grad = prior[2] .+ likelihood[2]
 
