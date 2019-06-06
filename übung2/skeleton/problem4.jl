@@ -105,7 +105,7 @@ function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Floa
     end
     # here we just reused what was used in probem3
     # as results from fitting alpha and c where quite satisfying we didn't change it
-    opt = Optim.Options(iterations=5000, show_trace=true);
+    opt = Optim.Options(iterations=100, show_trace=false);
     result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
@@ -241,16 +241,17 @@ function problem4()
     rand_disparity = random_disparity(disparity_size);
     const_disparity = constant_disparity(disparity_size);
     # # Display stereo: Initialized with constant 8's
-    result = stereo(const_disparity, im0, im1);
-    show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+    # result = stereo(const_disparity, im0, im1);
+    # show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+    #
+    # # Display stereo: Initialized with noise in [0,14]
+    # result = stereo(rand_disparity, im0, im1);
+    # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
+    #
+    # #Display stereo: Initialized with gt
+    # result = stereo_GAR(gt, im0, im1, alpha, c);
+    # show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
 
-    # Display stereo: Initialized with noise in [0,14]
-    result = stereo(rand_disparity, im0, im1);
-    show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
-
-    #Display stereo: Initialized with gt
-    result = stereo_GAR(gt, im0, im1);
-    show_3Plot(result-gt, gt, result, "Diff", "gt_disparity", "Opt result")
 
 
     alpha = 10.0
