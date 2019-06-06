@@ -40,8 +40,8 @@ function stereo_GAR_prior(x::Array{Float64,2})
     height,width = size(x)
     # compute log over vertical and horizontal disparities
 
-    horizontal = GAR(x[:,1:end-1]-x[:,2:end],3.0,10.0);
-    vertical   = GAR(x[1:end-1,:]-x[2:end,:],3.0,10.0);
+    horizontal = GAR(x[:,1:end-1]-x[:,2:end],0.5,10.);
+    vertical   = GAR(x[1:end-1,:]-x[2:end,:],0.5,10.);
     # sum over all vertical and horizontal potentials
     value = horizontal[1] + vertical[1]
     # as the result is 1 row/column short due to indexing... replace this with zeros
@@ -62,7 +62,7 @@ function stereo_GAR_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    GAR_likelihood = GAR(im0-im1_x,3.0, 10.0);
+    GAR_likelihood = GAR(im0-im1_x,0.5, 10.);
     # value is than easy:
     value = GAR_likelihood[1]
     # # for the gradient we he have do the Central Differences
@@ -104,7 +104,7 @@ function stereo_GAR(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Floa
     end
     # here we just reused what was used in probem3
     # as results from fitting alpha and c where quite satisfying we didn't change it
-    opt = Optim.Options(iterations=50, show_trace=false);
+    opt = Optim.Options(iterations=5000, show_trace=true);
     result = optimize(value, gradient, x0,GradientDescent(linesearch=StrongWolfe()), opt);
     x = reshape(Optim.minimizer(result), size(im0))
 
@@ -209,16 +209,16 @@ function problem4()
     rand_disparity = random_disparity(disparity_size);
     const_disparity = constant_disparity(disparity_size);
     # # Display stereo: Initialized with constant 8's
-    # result = stereo(const_disparity, im0, im1);
-    # show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
-    #
-    # # Display stereo: Initialized with noise in [0,14]
-    # result = stereo(rand_disparity, im0, im1);
-    # show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
-    #
-    # #Display stereo: Initialized with gt
+    result = stereo(const_disparity, im0, im1);
+    show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
+
+    # Display stereo: Initialized with noise in [0,14]
+    result = stereo(rand_disparity, im0, im1);
+    show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
+
+    #Display stereo: Initialized with gt
     result = stereo_GAR(gt, im0, im1);
-    show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
+    show_3Plot(result-gt, gt, result, "Diff", "gt_disparity", "Opt result")
 
 
     ## Coarse to fine estimation..

@@ -4,6 +4,7 @@ push!(LOAD_PATH, pwd())
 include("problem2.jl");
 using Optim
 using LineSearches
+using Images
 
 
 
@@ -48,11 +49,11 @@ function stereo_log_likelihood(x::Array{Float64,2}, im0::Array{Float64,2}, im1::
     # shift im1 for disparity (need for likelihood)
     im1_x = shift_disparity(im1,x)
     # compute likelihood
-    log_likelihood = log_studentt(im0-im1_x, 0.004, 1.0);
+    log_likelihood = log_studentt(im0-im1_x,1.0, 0.004);
     # value is than easy:
     value = log_likelihood[1]
     # for the gradient we he have do the Central Differences
-    im1_g = 0.5 * (hcat(zeros(height,2), im1) - hcat(im1, zeros(height,2)))
+    im1_g = 0.5 .* (hcat(zeros(height,2), im1) .- hcat(im1, zeros(height,2)))
     # and shift this by the disparity
     im1_g_x = shift_disparity(im1_g[:, 2 : end-1], x)
     #Followingly we can use the formula from Lecture 3 Slide 62
@@ -70,7 +71,7 @@ function stereo_log_posterior(x::Array{Float64,2}, im0::Array{Float64,2}, im1::A
     # add values of prior ang likelihood
     log_posterior = prior[1] + likelihood[1]
     # add gradient of prior ang likelihood
-    log_posterior_grad = prior[2] + likelihood[2]
+    log_posterior_grad = prior[2] .+ likelihood[2]
 
     return log_posterior::Float64, log_posterior_grad::Array{Float64,2}
 end
@@ -89,9 +90,9 @@ function stereo(x0::Array{Float64,2}, im0::Array{Float64,2}, im1::Array{Float64,
         dx = -stereo_log_posterior(reshape(x, size(im0)), im0,im1)[2];
         last[:] = dx[:];
     end
-    # till convergance would be nice but ain't nobody got time for that. So max iterations=50
+    # till convergance would be nice but ain't nobody got time for that. So max iterations=500
     # when you run more iteration it gets first mor "blurry" til its just a constant grey map => not desired
-    opt = Optim.Options(iterations=50, show_trace=true);
+    opt = Optim.Options(iterations=500, show_trace=true);
     # could also be run with linesearch=StrongWolfe() which converges the fastest
     # BFGS: OOM
     # LBFGS: super fast but sometimes takes hough jumps => may return something totally different
@@ -232,7 +233,7 @@ function problem3()
 
     # Display stereo: Initialized with gt
     result = stereo(gt, im0, im1);
-    show_3Plot(result-gt, gt, result, "Diff", "rand_disparity", "Opt result")
+    show_3Plot(result-gt, gt, result, "Diff", "gt_disparity", "Opt result")
 
     ## Coarse to fine estimation..
     im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
