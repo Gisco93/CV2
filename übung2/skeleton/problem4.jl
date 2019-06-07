@@ -339,6 +339,4 @@ function problem4()
 
     show_5Plot(result_fine0, result_coarse1, result_coarse2,result_coarse3,result_coarse4, "Opt result", "Opt result/2", "Opt result/4", "Opt result/8", "Opt result/16")
 
-
-
 end
