@@ -42,7 +42,7 @@ $p(x_1,x_2,x_4,x_5,x_6,x_7,x_8,x_9,x_{10},x_{11},x_{12},x_{13},x_{14},x_{15})=p(
 The factorization of the undirected graphical model is as follows\\
 $p(x_1,x_2,x_4,x_5,x_6,x_7,x_8,x_9,x_{10},x_{11},x_{12},x_{13},x_{14},x_{15})=\frac{1}{Z}\phi_0(x_3) \phi_1(x_1,x_4) \phi_2(x_2,x_4,x_5,x_8) \phi_3(x_7,x_{10}) \phi_4(x_7,x_{11})\\ \phi_5(x_{11},x_{14}) \phi_6(x_5,x_9) \phi_7(x_8,x_{12}) \phi_8(x_9,x_{12},x_{13},x_{15}) \phi_9(x_6,x_9)$
 \subsubsection{1 Point}
-
+---- excluded----
 \begin{tikzpicture}
 %  \tikz{
 % nodes
@@ -142,5 +142,64 @@ $x_4->x_2,x_3$
 
 
 \subsubsection{4 Points}
-Based also in the previous question about for Markov blanket for each of the variables, we can conclude that in the figure 2, undirected graph, the first one that says $x_1$ "is independent of" $x_4$ and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, is completely true based also in the definition that, a node is conditionally independent of all other nodes given its Markov blanket. The second one that says $x_2$ "is independent of" $x_3$, because the $x_3$ is not in the Markov blanket of $x_2$, and from definition a node is conditionally independent of all other nodes given its Markov blanket, and that $x_1$ and $x_4$ are the Markov blanket of $x_2$, because they are direct node of $x_2$.
-And for the directed Graph, first one that says $x_1$ "independent of" $x_4$, exactly as the definition from above, and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, because $x_1$ has 2 children and no other parents and also those children have just one parent and its $x_1$. The second one 
+Based also in the previous question about for Markov blanket for each of the variables, we can conclude that in the figure 2, undirected graph, the first one that says $x_1$ is independent of $x_4$ and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, is completely true based also in the definition that, a node is conditionally independent of all other nodes given its Markov blanket.\\ 
+Further mathematical proof. We have the factorization of the undirected graph: $ p(x_1,x_2,x_3,x_4) = \frac{1}{z}\phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)$.
+$$ p( x_4 | x_1,x_2,x_3) = \frac{p(x_1,x_2,x_3,x_4)}{p(x_1, x_2,x_3)}$$
+$$= \frac{p(x_1,x_2,x_3,x_4)}{\sum_{x_4}p(x_1, x_2,x_3,x_4)}$$
+$$= \frac{ \frac{1}{z}\phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}{\sum_{x_4} \frac{1}{z}\phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}$$
+$$= \frac{ \phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}{\phi(x_1,x_2)\phi(x_1,x_3) \sum_{x_4} \phi(x_2,x_4)\phi(x_4,x_3)}$$
+$$= \frac{ \phi(x_2,x_4)\phi(x_4,x_3)}{\sum_{x_4} \phi(x_2,x_4)\phi(x_4,x_3)}$$
+$$= \frac{ \phi(x_2,x_4)\phi(x_4,x_3)\sum_{x_1} \frac{1}{z} \phi(x_1,x_3)\phi(x_1,x_2)}{\sum_{x_4} \phi(x_2,x_4)\phi(x_4,x_3)\sum_{x_1} \frac{1}{z} \phi(x_1,x_3)\phi(x_1,x_2)}$$
+$$= \frac{\sum_{x_1} \frac{1}{z} \phi(x_2,x_4)\phi(x_4,x_3) \phi(x_1,x_3)\phi(x_1,x_2)}{\sum_{x_4} \sum_{x_1} \frac{1}{z}\phi(x_2,x_4)\phi(x_4,x_3) \phi(x_1,x_3)\phi(x_1,x_2)}$$
+$$= \frac{\sum_{x_1} p(x_1,x_2,x_3,x_4) }{\sum_{x_4} \sum_{x_1} p(x_1,x_2,x_3,x_4) }$$
+$$= \frac{p(x_2,x_3,x_4) }{p(x_2,x_3) }$$
+$$= p(x_4 |x_2, x_3)$$
+ The second one that says $x_2$ is independent of $x_3$, because the $x_3$ is not in the Markov blanket of $x_2$, and from definition a node is conditionally independent of all other nodes given its Markov blanket, and that $x_1$ and $x_4$ are the Markov blanket of $x_2$, because they are direct node of $x_2$.\\
+Further mathematical proof (As the first one):\\
+ $$ p( x_3 | x_1,x_2,x_4) = \frac{p(x_1,x_2,x_3,x_4)}{p(x_1, x_2,x_4)}$$
+$$= \frac{p(x_1,x_2,x_3,x_4)}{\sum_{x_3}p(x_1, x_2,x_3,x_4)}$$
+$$= \frac{ \frac{1}{z}\phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}{\sum_{x_3} \frac{1}{z}\phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}$$
+$$= \frac{ \phi(x_1,x_2)\phi(x_2,x_4)\phi(x_4,x_3)\phi(x_1,x_3)}{\phi(x_1,x_2)\phi(x_2,x_4) \sum_{x_3} \phi(x_4,x_3)\phi(x_1,x_3)}$$
+$$= \frac{\phi(x_4,x_3)\phi(x_1,x_3)}{\sum_{x_3} \phi(x_4,x_3)\phi(x_1,x_3)}$$
+$$= \frac{\phi(x_4,x_3)\phi(x_1,x_3)\sum_{x_2} \frac{1}{z} \phi(x_1,x_2)\phi(x_2,x_4)}{\sum_{x_3} \phi(x_4,x_3)\phi(x_1,x_3)\sum_{x_2} \frac{1}{z} \phi(x_1,x_2)\phi(x_2,x_4)}$$
+$$= \frac{\sum_{x_2} \frac{1}{z} \phi(x_4,x_3)\phi(x_1,x_3) \phi(x_1,x_2)\phi(x_2,x_4)}{\sum_{x_3} \sum_{x_2} \frac{1}{z} \phi(x_4,x_3)\phi(x_1,x_3) \phi(x_1,x_2)\phi(x_2,x_4)}$$
+$$= \frac{\sum_{x_2} p(x_1,x_2,x_3,x_4) }{\sum_{x_3} \sum_{x_2} p(x_1,x_2,x_3,x_4) }$$
+$$= \frac{p(x_1,x_3,x_4) }{p(x_1,x_4) }$$
+$$= p(x_3 |x_1, x_4)$$
+ 
+And for the directed Graph, first one that says $x_1$ independent of $x_4$, exactly as the definition from above, and that $x_2$ and $x_3$ are the Markov blanket of $x_1$, because $x_1$ has 2 children and no other parents and also those children have just one parent and its $x_1$. 
+Further mathematical proof. We have the factorization of the directed graph: $ p(x_1,x_2,x_3,x_4) = p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_3, x_2)$.
+$$p(x_4|x_1,x_2,x_3) = \frac{p(x_1,x_2,x_3,x_4)}{p(x_1,x_2,x_3)}$$
+$$ = \frac{p(x_1,x_2,x_3,x_4)}{\sum_{x_4} p(x_1,x_2,x_3, x_4)}$$
+$$ = \frac{p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_3, x_2)}{\sum_{x_4}p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_3, x_2)}$$
+$$ = \frac{p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_3, x_2)}{p(x_1)p(x_2|x_1)p(x_3|x_1)\sum_{x_4}p(x_4|x_3, x_2)}$$
+$$ = \frac{p(x_4|x_3, x_2)}{\sum_{x_4}p(x_4|x_3, x_2)}$$
+$$ = \frac{p(x_4|x_3, x_2)}{1} = p(x_4|x_3, x_2)$$
+Also $p(x_1|x_2,x_3,x_4) = p(x_1|x_2.x_3)$ can be proofen.\\
+
+
+Last  Equation: 
+$$p(x_3, x_2| x_1) = \frac{p(x_1,x_2,x_3)}{p(x_1)}$$
+$$= \frac{\sum_{x_4} p(x_1,x_2,x_3,x_4)}{p(x_1)}$$
+$$= \frac{\sum_{x_4} p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_3, x_2)}{p(x_1)}$$
+$$= \frac{p(x_1)p(x_2|x_1)p(x_3|x_1)\sum_{x_4} p(x_4|x_3, x_2)}{p(x_1)}$$
+$$= p(x_2|x_1)p(x_3|x_1)\sum_{x_4} p(x_4|x_3, x_2)$$
+$$= p(x_2|x_1)p(x_3|x_1) * 1$$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

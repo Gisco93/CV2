@@ -224,7 +224,7 @@ function problem3()
     disparity_size[2] = size(gt,2);
     rand_disparity = random_disparity(disparity_size);
     const_disparity = constant_disparity(disparity_size);
-    # # # Display stereo: Initialized with constant 8's
+    # Display stereo: Initialized with constant 8's
     result = stereo(const_disparity, im0, im1);
     show_3Plot(result-const_disparity, const_disparity, result, "Diff", "const_disparity", "Opt result")
 
@@ -232,39 +232,40 @@ function problem3()
     result = stereo(rand_disparity, im0, im1);
     show_3Plot(result-rand_disparity, rand_disparity, result, "Diff", "rand_disparity", "Opt result")
 
-
     # Display stereo: Initialized with gt
     result = stereo(gt, im0, im1);
     show_3Plot(result-gt, gt, result, "Diff", "gt_disparity", "Opt result")
 
-    # ## Coarse to fine estimation..
-    # im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
-    # im1_coarse4 = downsample2(downsample2(downsample2(downsample2(im1))))
-    # gt_coarse4 = downsample2(downsample2(downsample2(downsample2(gt))))
-    # result_coarse4 = stereo(gt_coarse4, im0_coarse4, im1_coarse4);
-    # # show_3Plot(result_coarse4-gt_coarse4, gt_coarse4, result_coarse4, "Diff", "gt coarse16 to fine", "Opt result")
-    #
-    # im0_coarse3 = downsample2(downsample2(downsample2(im0)))
-    # im1_coarse3 = downsample2(downsample2(downsample2(im1)))
-    # gt_coarse3 = upsample2(result_coarse4,[3 3])
-    # result_coarse3 = stereo(gt_coarse3, im0_coarse3, im1_coarse3);
-    # # show_3Plot(result_coarse3-gt_coarse3, gt_coarse3, result_coarse3, "Diff", "gt coarse8 to fine", "Opt result")
-    #
-    # im0_coarse2 = downsample2(downsample2(im0))
-    # im1_coarse2 = downsample2(downsample2(im1))
-    # gt_coarse2 = upsample2(result_coarse3,[3 3])
-    # result_coarse2 = stereo(gt_coarse2, im0_coarse2, im1_coarse2);
-    # # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
-    #
-    # im0_coarse1 = downsample2(im0)
-    # im1_coarse1 = downsample2(im1)
-    # gt_coarse1 = upsample2(result_coarse2,[3 3])
-    # result_coarse1 = stereo(gt_coarse1, im0_coarse1, im1_coarse1);
-    # # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
-    #
-    # gt_coarse0 = upsample2(result_coarse1,[3 3])
-    # result_fine0 = stereo(gt_coarse0, im0, im1);
-    # # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
-    #
-    # show_5Plot(result_fine0, result_coarse1, result_coarse2,result_coarse3,result_coarse4, "Opt result", "Opt result/2", "Opt result/4", "Opt result/8", "Opt result/16")
+    ## Coarse to fine estimation..
+    im0_coarse4 = downsample2(downsample2(downsample2(downsample2(im0))))
+    im1_coarse4 = downsample2(downsample2(downsample2(downsample2(im1))))
+    # gt_coarse4 = downsample2(downsample2(downsample2(downsample2(const_disparity))))
+    # gt_coarse4 = downsample2(downsample2(downsample2(downsample2(rand_disparity))))
+    gt_coarse4 = downsample2(downsample2(downsample2(downsample2(gt))))
+    result_coarse4 = stereo(gt_coarse4, im0_coarse4, im1_coarse4);
+    # show_3Plot(result_coarse4-gt_coarse4, gt_coarse4, result_coarse4, "Diff", "gt coarse16 to fine", "Opt result")
+
+    im0_coarse3 = downsample2(downsample2(downsample2(im0)))
+    im1_coarse3 = downsample2(downsample2(downsample2(im1)))
+    gt_coarse3 = upsample2(result_coarse4,[3 3])
+    result_coarse3 = stereo(gt_coarse3, im0_coarse3, im1_coarse3);
+    # show_3Plot(result_coarse3-gt_coarse3, gt_coarse3, result_coarse3, "Diff", "gt coarse8 to fine", "Opt result")
+
+    im0_coarse2 = downsample2(downsample2(im0))
+    im1_coarse2 = downsample2(downsample2(im1))
+    gt_coarse2 = upsample2(result_coarse3,[3 3])
+    result_coarse2 = stereo(gt_coarse2, im0_coarse2, im1_coarse2);
+    # show_3Plot(result_coarse2-gt_coarse2, gt_coarse2, result_coarse2, "Diff", "gt coarse4 to fine", "Opt result")
+
+    im0_coarse1 = downsample2(im0)
+    im1_coarse1 = downsample2(im1)
+    gt_coarse1 = upsample2(result_coarse2,[3 3])
+    result_coarse1 = stereo(gt_coarse1, im0_coarse1, im1_coarse1);
+    # show_3Plot(result_coarse1-gt_coarse1, gt_coarse1, result_coarse1, "Diff", "gt coarse2 to fine", "Opt result")
+
+    gt_coarse0 = upsample2(result_coarse1,[3 3])
+    result_fine0 = stereo(gt_coarse0, im0, im1);
+    # show_3Plot(result_fine0-gt_coarse0, gt_coarse0, result_fine0, "Diff", "gt fine", "Opt result")
+
+    show_5Plot(result_fine0, result_coarse1, result_coarse2,result_coarse3,result_coarse4, "Opt result", "Opt result/2", "Opt result/4", "Opt result/8", "Opt result/16")
 end
