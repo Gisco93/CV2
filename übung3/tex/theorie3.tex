@@ -1,0 +1,80 @@
+%=========================================================
+
+% Here you can choose to compile with or without solutions.
+% However, this definition is ignored if you use any
+% command from the `Makefile`.
+\providecommand{\withSol}{\iftrue}
+
+%=========================================================
+
+\documentclass
+[twoside,german,colorbacktitle,accentcolor=tud9c]
+{tudexercise}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{amstext}
+\usepackage{amsmath}
+\usepackage{graphicx}
+%\usepackage{setspace}
+\usepackage{multicol}
+\usepackage{mathtools}
+\usepackage{dsfont}
+\usepackage{units}
+%\usepackage{subfigure}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{fancyref}
+\usepackage{gensymb}
+\usepackage{tikz}
+\usetikzlibrary{shapes.misc} 	
+\usepackage[verbose]{placeins}%Floatbarrier
+\usepackage{tikz}
+\usetikzlibrary{bayesnet}
+
+
+%=========================================================
+
+
+\setcounter{section}{3}
+%=========================================================
+
+\newcommand{\grp}{8}
+
+%=========================================================
+
+
+\begin{document}
+
+\title{Computer Vision 2\\ Assignment  \arabic{section}}
+\subtitle{Summer Semester 2019}
+\subsubtitle{Group \grp{} \\ Moritz Fuchs $\&$ Diedon Xhiha}
+
+\maketitle
+
+%=========================================================
+
+
+
+\begin{examheader}
+	\textmb{Computer Vision 2 \\  Assignment  \arabic{section} | Group \grp{}}\\
+	Moritz Fuchs	$\&$ Diedon Xhiha	\\ 
+\end{examheader} 
+
+
+%=========================================================
+% Anpassung an Aufgabenstellung
+\renewcommand\thesubsection{Problem \arabic{subsection}}
+\renewcommand\thesubsubsection{\arabic{subsubsection}.}
+
+%=========================================================
+\FloatBarrier
+\input{GraphCutsAndAlphaExpansionUsingNumpy.tex}
+
+\FloatBarrier
+\input{HornSchunckOpticalFlowUsingPyTorch.tex}
+
+%=========================================================
+
+\end{document}
