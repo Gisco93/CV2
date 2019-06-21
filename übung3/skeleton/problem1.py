@@ -95,7 +95,7 @@ def show_stereo(d, gt):
 
 
 def evaluate_stereo(d, gt):
-    """Computes percentage of false labels in the valid region (gt > 0)."""
+    """Computes percentage of correct labels in the valid region (gt > 0)."""
 
     result = []
 
