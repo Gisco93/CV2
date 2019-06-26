@@ -44,10 +44,10 @@ def negative_log_laplacian(x, s):
     """ Elementwise evaluation of a log Laplacian. """
 
 
-    def equation1(x):
+    def equation_1(x):
        return -(1/(2*s))*np.log(np.exp(-x/s))
 
-    functionNNL = np.vectorize(equation1)
+    functionNNL = np.vectorize(equation_1)
     result = functionNNL(x)
 
 
@@ -110,7 +110,7 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
 
     nllh_init = negative_stereo_loglikelihood(i0,i1,d0,s)
     nllh_candidate = negative_stereo_loglikelihood(i0,i1,candidate_disparities[0],s)
-    unaryGC = 
+    unaryGC =
 
 
 
