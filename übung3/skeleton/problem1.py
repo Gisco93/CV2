@@ -20,22 +20,22 @@ def edges4connected(height, width):
         A `nd.array` with dtype `int32/int64` of size |E| x 2.
     """
 
-    edges = np.ndarray(shape=((2 * (height * width) - (height + width)),2), dtype=np.int32)
+    edges = np.ndarray(shape=((2 * (height * width) - (height + width)), 2), dtype=np.int32)
     # edges = []
-    edgeCounter=0
-    indexCounter=0
+    edgeCounter = 0
+    indexCounter = 0
     for m in range(0, height, 1):
         for n in range(0, width, 1):
             if m < width - 1:
-                edges[indexCounter]= [edgeCounter, edgeCounter + 1]
-                indexCounter = indexCounter + 1
+                edges[indexCounter] = [edgeCounter, edgeCounter + 1]
+                indexCounter += 1
             if n < height - 1:
-               edges[indexCounter] = [edgeCounter, edgeCounter + width]
-               indexCounter = indexCounter + 1
-               edgeCounter = edgeCounter + 1
+                edges[indexCounter] = [edgeCounter, edgeCounter + width]
+                indexCounter += 1
+                edgeCounter += 1
 
     # sanity check
-    assert (edges.shape[0] == 2 * (height*width) - (height+width) and edges.shape[1] == 2)
+    assert (edges.shape[0] == 2 * (height * width) - (height + width) and edges.shape[1] == 2)
     assert (edges.dtype in [np.int32, np.int64])
     return edges
 
@@ -43,14 +43,11 @@ def edges4connected(height, width):
 def negative_log_laplacian(x, s):
     """ Elementwise evaluation of a log Laplacian. """
 
-
     def equation_1(x):
-       return -(1/(2*s))*np.log(np.exp(-x/s))
+        return -np.log(1 / (2 * s)) + (np.fabs(x) / s)
 
     functionNNL = np.vectorize(equation_1)
     result = functionNNL(x)
-
-
 
     assert (np.equal(result.shape, x.shape).all())
     return result
@@ -69,17 +66,16 @@ def negative_stereo_loglikelihood(i0, i1, d, s, invalid_penalty=1000.0):
     """
 
     nllh = []
-    i1Copy=np.copy(i1)
+    i1Copy = np.copy(i1)
     for m in range(d.shape[0]):
         for n in range(d.shape[1]):
-            if 0 <= d[m][n] <= d.shape[0]:
-                i1Copy[m][n]=i1[m][n]-d[m][n]
+            idx = int(np.round((n - d[m][n])))
+            if (0 <= idx) and (idx < i1.shape[1]):
+                i1Copy[m][n] = i1[m][idx]
             else:
-                i1Copy[m][n]=invalid_penalty
+                i1Copy[m][n] = invalid_penalty
 
-
-    nllh=negative_log_laplacian(i1Copy,s)
-
+    nllh = negative_log_laplacian(i1Copy, s)
 
     assert (np.equal(nllh.shape, d.shape).all())
     assert (nllh.dtype in [np.float32, np.float64])
@@ -108,13 +104,18 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
 
     d = []
 
-    nllh_init = negative_stereo_loglikelihood(i0,i1,d0,s)
-    nllh_candidate = negative_stereo_loglikelihood(i0,i1,candidate_disparities[0],s)
-    unaryGC =
+    nllh_init = negative_stereo_loglikelihood(i0, i1, d0, s)
+    print("nllh init: {}".format(nllh_init[1:5, 1:5]))
+    print("edges: {}".format(edges[0:5, :]))
 
-
-
-
+    nllh_candidate = negative_stereo_loglikelihood(i0, i1, candidate_disparities[1] * np.ones(d0.shape), s)
+    print("nllh candidate: {}".format(np.sum(nllh_candidate)))
+    # unaryGC =
+    # f, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    # ax1.imshow(i1-i1Copy, cmap='gray')
+    # ax2.imshow(i1, cmap='gray')
+    # ax3.imshow(i1Copy, cmap='gray')
+    # plt.show()
     assert (np.equal(d.shape, d0.shape).all())
     assert (d.dtype == d0.dtype)
     return d
@@ -158,17 +159,19 @@ def problem1():
 
     # Graph cuts with zero initialization
     zero_init = np.zeros(gt.shape).astype(np.int32)
+    estimate_zero_init = alpha_expansion(i0, i1, edges, gt, candidate_disparities, s, lmbda)
     estimate_zero_init = alpha_expansion(i0, i1, edges, zero_init, candidate_disparities, s, lmbda)
     show_stereo(estimate_zero_init, gt)
     perc_correct = evaluate_stereo(estimate_zero_init, gt)
-    print("Correct labels (zero init): %3.2f%%" % (perc_correct*100))
+    print("Correct labels (zero init): %3.2f%%" % (perc_correct * 100))
 
     # Graph cuts with random initialization
     random_init = np.random.randint(low=0, high=gt.max() + 1, size=i0.shape)
     estimate_random_init = alpha_expansion(i0, i1, edges, random_init, candidate_disparities, s, lmbda)
     show_stereo(estimate_random_init, gt)
     perc_correct = evaluate_stereo(estimate_random_init, gt)
-    print("Correct labels (random init): %3.2f%%" % (perc_correct*100))
+    print("Correct labels (random init): %3.2f%%" % (perc_correct * 100))
+
 
 if __name__ == '__main__':
     problem1()

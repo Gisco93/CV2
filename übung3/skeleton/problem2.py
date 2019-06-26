@@ -60,6 +60,7 @@ def warp_image(im, flow):
     assert (im.size(1) in [1, 3] and flow.size(1) == 2)
     # TODO check right dimensional order
     print("Image shape : {}".format(str(im.shape)))
+    dif = torch.div(flow,flow.shape[1])
     flo = flow.transpose(1, 3).transpose(1, 2)
 
     print("Flow shape : {}".format(str(flow.shape)))
@@ -69,7 +70,7 @@ def warp_image(im, flow):
     f, (ax1, ax2, ax3) = plt.subplots(1, 3)
     ax1.imshow(torch2numpy(im.squeeze(0))[:, :, 0], cmap='gray')
     ax2.imshow(torch2numpy(flow.squeeze(0))[:, :, 0], cmap='gray')
-    ax3.imshow(torch2numpy(flo.squeeze(0))[:, 0, :], cmap='gray')
+    ax3.imshow(torch2numpy(warped.squeeze(0))[:, :, 0], cmap='gray')
     plt.show()
     return warped
 
