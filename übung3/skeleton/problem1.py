@@ -20,7 +20,19 @@ def edges4connected(height, width):
         A `nd.array` with dtype `int32/int64` of size |E| x 2.
     """
 
-    edges = []
+    edges = np.ndarray(shape=((2 * (height * width) - (height + width)),2), dtype=np.int32)
+    # edges = []
+    edgeCounter=0
+    indexCounter=0
+    for m in range(0, height, 1):
+        for n in range(0, width, 1):
+            if m < width - 1:
+                edges[indexCounter]= [edgeCounter, edgeCounter + 1]
+                indexCounter = indexCounter + 1
+            if n < height - 1:
+               edges[indexCounter] = [edgeCounter, edgeCounter + width]
+               indexCounter = indexCounter + 1
+               edgeCounter = edgeCounter + 1
 
     # sanity check
     assert (edges.shape[0] == 2 * (height*width) - (height+width) and edges.shape[1] == 2)
@@ -31,7 +43,14 @@ def edges4connected(height, width):
 def negative_log_laplacian(x, s):
     """ Elementwise evaluation of a log Laplacian. """
 
-    result = []
+
+    def equation1(x):
+       return -(1/(2*s))*np.log(np.exp(-x/s))
+
+    functionNNL = np.vectorize(equation1)
+    result = functionNNL(x)
+
+
 
     assert (np.equal(result.shape, x.shape).all())
     return result
@@ -50,6 +69,17 @@ def negative_stereo_loglikelihood(i0, i1, d, s, invalid_penalty=1000.0):
     """
 
     nllh = []
+    i1Copy=np.copy(i1)
+    for m in range(d.shape[0]):
+        for n in range(d.shape[1]):
+            if 0 <= d[m][n] <= d.shape[0]:
+                i1Copy[m][n]=i1[m][n]-d[m][n]
+            else:
+                i1Copy[m][n]=invalid_penalty
+
+
+    nllh=negative_log_laplacian(i1Copy,s)
+
 
     assert (np.equal(nllh.shape, d.shape).all())
     assert (nllh.dtype in [np.float32, np.float64])
@@ -77,6 +107,13 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
     """
 
     d = []
+
+    nllh_init = negative_stereo_loglikelihood(i0,i1,d0,s)
+    nllh_candidate = negative_stereo_loglikelihood(i0,i1,candidate_disparities[0],s)
+    unaryGC = 
+
+
+
 
     assert (np.equal(d.shape, d0.shape).all())
     assert (d.dtype == d0.dtype)
@@ -114,7 +151,8 @@ def problem1():
 
     # Create 4 connected edge neighborhood
     edges = edges4connected(i0.shape[0], i0.shape[1])
-
+    # edges = edges4connected(10,10)
+    # print(edges)
     # Candidate search range
     candidate_disparities = np.arange(0, gt.max() + 1)
 
