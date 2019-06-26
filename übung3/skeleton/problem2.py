@@ -13,28 +13,29 @@ from utils import read_image
 def numpy2torch(array):
     """ Converts 3D numpy HWC ndarray to 3D PyTorch CHW tensor."""
     assert (array.ndim == 3)
-
-    result = []
-
+    result = torch.from_numpy(np.swapaxes(np.swapaxes(array, 0, 1), 0, 2))
     return result
 
 
 def torch2numpy(tensor):
     """ Convert 3D PyTorch CHW tensor to 3D numpy HWC ndarray."""
     assert (tensor.dim() == 3)
-
-    result = []
-
+    result = np.swapaxes(np.swapaxes(tensor.numpy(), 0, 2), 0, 1)
     return result
 
 
 def load_data(im1_filename, im2_filename, flo_filename):
     """ Loads images and flow ground truth. Returns 4D tensors."""
-
-    tensor1 = []
-    tensor2 = []
-    flow_gt = []
-
+    img1 = rgb2gray(read_image(im1_filename))
+    img2 = rgb2gray(read_image(im2_filename))
+    flo = read_flo(flo_filename)
+    tensor1 = numpy2torch(img1).unsqueeze_(0)
+    tensor2 = numpy2torch(img2).unsqueeze_(0)
+    flow_gt = numpy2torch(flo).unsqueeze_(0)
+    # print(tensor1.shape)
+    # print(tensor2.shape)
+    # print(flow_gt.shape)
+    warp_image(tensor1, flow_gt)
     return tensor1, tensor2, flow_gt
 
 
@@ -45,8 +46,10 @@ def evaluate_flow(flow, flow_gt):
     """
     assert (flow.dim() == 4 and flow_gt.dim() == 4)
     assert (flow.size(1) == 2 and flow_gt.size(1) == 2)
-
-    aepe = []
+    epe = torch.norm(torch.where(flow_gt > 1e9, flow - flow_gt, torch.zeros_like(flow_gt)), p=2, dim=1)
+    print("max EPE : {}".format(torch.max(epe)))
+    print("min EPE : {}".format(torch.min(epe)))
+    aepe = epe.mean()
 
     return aepe
 
@@ -54,18 +57,36 @@ def evaluate_flow(flow, flow_gt):
 def warp_image(im, flow):
     """ Warps given image according to the given optical flow."""
     assert (im.dim() == 4 and flow.dim() == 4)
-    assert (im.size(1) in [1,3] and flow.size(1) == 2)
+    assert (im.size(1) in [1, 3] and flow.size(1) == 2)
+    # TODO check right dimensional order
+    print("Image shape : {}".format(str(im.shape)))
+    flo = flow.transpose(1, 3).transpose(1, 2)
 
-    warped = []
-
+    print("Flow shape : {}".format(str(flow.shape)))
+    print("Flo  shape : {}".format(str(flo.shape)))
+    warped = torch.nn.functional.grid_sample(im, flo)
+    print("warped shape : {}".format(str(warped.shape)))
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(torch2numpy(im.squeeze(0))[:, :, 0], cmap='gray')
+    ax2.imshow(torch2numpy(flow.squeeze(0))[:, :, 0], cmap='gray')
+    ax3.imshow(torch2numpy(flo.squeeze(0))[:, 0, :], cmap='gray')
+    plt.show()
     return warped
 
 
 def visualize_warping_practice(im1, im2, flow_gt):
     """ Visualizes the result of warping the second image by ground truth."""
     assert (im1.dim() == 4 and im2.dim() == 4 and flow_gt.dim() == 4)
-    assert (im1.size(1) in [1,3] and im2.size(1) in [1,3] and flow_gt.size(1) == 2)
+    assert (im1.size(1) in [1, 3] and im2.size(1) in [1, 3] and flow_gt.size(1) == 2)
+    im2_w = warp_image(im2, flow_gt)
+    im_diff = torch.zeros_like(im1)
+    im_diff = torch.sub(im1, im2_w)
 
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(torch2numpy(im2.squeeze(0))[:, :, 0], cmap='gray')
+    ax2.imshow(torch2numpy(flow_gt.squeeze(0))[:, :, 0], cmap='gray')
+    ax3.imshow(torch2numpy(flow_gt.squeeze(0))[:, :, 1], cmap='gray')
+    plt.show()
     return
 
 
@@ -123,7 +144,6 @@ def estimate_flow_coarse_to_fine(im1, im2, flow_gt, lambda_hs, learning_rate,
 
 
 def problem2():
-
     # Loading data
     im1, im2, flow_gt = load_data("frame10.png", "frame11.png", "flow10.flo")
 
@@ -131,6 +151,9 @@ def problem2():
     lambda_hs = 0.0015
     num_iter = 400
 
+    print(im1.size(1))
+    print(im2.size(1))
+    print(flow_gt.size(1))
     # Warping_practice
     visualize_warping_practice(im1, im2, flow_gt)
 
