@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import griddata
 import torch
 import torch.nn.functional as tf
 import torch.optim as optim
@@ -59,17 +60,30 @@ def warp_image(im, flow):
     assert (im.dim() == 4 and flow.dim() == 4)
     assert (im.size(1) in [1, 3] and flow.size(1) == 2)
     # TODO check right dimensional order
-    print("Image shape : {}".format(str(im.shape)))
-    dif = torch.div(flow,flow.shape[1])
-    flo = flow.transpose(1, 3).transpose(1, 2)
-
     print("Flow shape : {}".format(str(flow.shape)))
+
+    W, H = im.shape[2:4]
+    print(W, H)
+
+    scale = torch.tensor([float(W), float(H)])
+    scale.unsqueeze_(0).unsqueeze_(2).unsqueeze_(3)
+    print("Im shape : {}".format(str(im.shape)))
+    print("Scale shape : {}".format(str(scale.shape)))
+    flow_norm = torch.div(flow, scale)
+    print("Flow norm shape : {}".format(str(flow_norm.shape)))
+    flo = flow_norm.transpose(1, 3).transpose(1, 2)
     print("Flo  shape : {}".format(str(flo.shape)))
-    warped = torch.nn.functional.grid_sample(im, flo)
+
+    v_grid = torch.linspace(-1, 1, W).repeat(1, 1, H).view(H, W)
+    u_grid = torch.linspace(-1, 1, H).repeat(1, 1, W).view(W, H).transpose(0, 1)
+    grid = torch.stack([u_grid, v_grid]).unsqueeze_(0).transpose(1, 3)
+    grid = grid + flo
+    print("Grid shape : {}".format(str(grid.shape)))
+    warped = torch.nn.functional.grid_sample(im, grid, 'bilinear')
     print("warped shape : {}".format(str(warped.shape)))
     f, (ax1, ax2, ax3) = plt.subplots(1, 3)
     ax1.imshow(torch2numpy(im.squeeze(0))[:, :, 0], cmap='gray')
-    ax2.imshow(torch2numpy(flow.squeeze(0))[:, :, 0], cmap='gray')
+    ax2.imshow(torch2numpy(grid.squeeze(0))[:, 0, :], cmap='gray')
     ax3.imshow(torch2numpy(warped.squeeze(0))[:, :, 0], cmap='gray')
     plt.show()
     return warped
