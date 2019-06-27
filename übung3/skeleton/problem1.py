@@ -103,14 +103,39 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
     """
 
     d = []
+    edgesW = []
+    edgesWcheck = []
+    for cand_disparity in range(candidate_disparities.shape[0]):
+        if (cand_disparity == 0):
+            nllh_init = negative_stereo_loglikelihood(i0, i1, d0, s)
+            nllh_candidate = negative_stereo_loglikelihood(i0, i1,
+                                                           candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
+            unary = np.concatenate((nllh_init, nllh_candidate), axis=None)
 
-    nllh_init = negative_stereo_loglikelihood(i0, i1, d0, s)
-    print("nllh init: {}".format(nllh_init[1:5, 1:5]))
-    print("edges: {}".format(edges[0:5, :]))
+        else:
+            nllh_init = negative_stereo_loglikelihood(i0, i1,
+                                                      candidate_disparities[cand_disparity - 1] * np.ones(d0.shape), s)
+            nllh_candidate = negative_stereo_loglikelihood(i0, i1,
+                                                           candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
+            unary = np.concatenate((nllh_init, nllh_candidate), axis=None)
 
-    nllh_candidate = negative_stereo_loglikelihood(i0, i1, candidate_disparities[1] * np.ones(d0.shape), s)
-    print("nllh candidate: {}".format(np.sum(nllh_candidate)))
+        print("nllh init: {}".format(nllh_init))
+        print("unary: {}".format(unary))
+
+        for edgeIndex in range(edges.shape[0]):
+
+            if nllh_init[edgeIndex] == nllh_candidate[edgeIndex]:
+                np.append(edgesW, [0])
+            else:
+                np.append(edgesW, [lmbda])
+
+    print(edgesW)
+    # print("nllh init: {}".format(nllh_init[1:5, 1:5]))
+    # print("edges: {}".format(edges[0:5, :]))
+    # print("nllh candidate: {}".format(np.sum(nllh_candidate)))
+
     # unaryGC =
+
     # f, (ax1, ax2, ax3) = plt.subplots(1, 3)
     # ax1.imshow(i1-i1Copy, cmap='gray')
     # ax2.imshow(i1, cmap='gray')
