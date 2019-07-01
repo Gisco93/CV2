@@ -91,6 +91,3 @@ def test_graphcut():
     print("Unary:\n", unary)
     print("Pairwise:\n", pairwise.todense())
     print("Labels:\n", labels)
-
-if __name__ == '__main__':
-    test_graphcut()

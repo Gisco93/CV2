@@ -123,7 +123,7 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
         print("unary: {}".format(unary))
 
         for edgeIndex in range(edges.shape[0]):
-
+            print(nllh_init[edgeIndex].shape)
             if nllh_init[edgeIndex] == nllh_candidate[edgeIndex]:
                 np.append(edgesW, [0])
             else:
