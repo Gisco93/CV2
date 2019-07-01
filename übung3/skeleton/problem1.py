@@ -2,9 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from numpy import int8
+
 import gco
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.sparse import lil_matrix
 from scipy.sparse import csr_matrix
 from utils import rgb2gray
 
@@ -33,7 +36,7 @@ def edges4connected(height, width):
                 edges[indexCounter] = [edgeCounter, edgeCounter + width]
                 indexCounter += 1
                 edgeCounter += 1
-
+    # print(edges)
     # sanity check
     assert (edges.shape[0] == 2 * (height * width) - (height + width) and edges.shape[1] == 2)
     assert (edges.dtype in [np.int32, np.int64])
@@ -101,35 +104,35 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
 
 
     """
-
-    d = []
+    width = i0.shape[1]
+    print(width)
+    d = d0.copy()
     edgesW = []
     edgesWcheck = []
     for cand_disparity in range(candidate_disparities.shape[0]):
-        if (cand_disparity == 0):
-            nllh_init = negative_stereo_loglikelihood(i0, i1, d0, s)
-            nllh_candidate = negative_stereo_loglikelihood(i0, i1,
-                                                           candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
-            unary = np.concatenate((nllh_init, nllh_candidate), axis=None)
+        nllh_init = negative_stereo_loglikelihood(i0, i1, d, s)
+        nllh_candidate = negative_stereo_loglikelihood(i0, i1,
+                                                       candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
+        unary = np.stack((nllh_init.reshape(-1), nllh_candidate.reshape(-1)))
 
-        else:
-            nllh_init = negative_stereo_loglikelihood(i0, i1,
-                                                      candidate_disparities[cand_disparity - 1] * np.ones(d0.shape), s)
-            nllh_candidate = negative_stereo_loglikelihood(i0, i1,
-                                                           candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
-            unary = np.concatenate((nllh_init, nllh_candidate), axis=None)
+        print("nllh init: {}".format(nllh_init.shape))
+        print("unary: {}".format(unary.shape))
+        print(d0.shape)
+        N = d0.shape[0] * d0.shape[1]
+        print(N)
+        pairwise = lil_matrix((N, N), dtype=np.float32)
 
-        print("nllh init: {}".format(nllh_init))
-        print("unary: {}".format(unary))
+        for edge in edges:
+            # print(edge)
+            if d[int(np.floor(edge[0] / width)), int(edge[0] % width)] == \
+                    d[int(np.floor(edge[1] / width)), int(edge[1] % width)]:
+                pairwise[edge[0], edge[1]] = lmbda
+            # if edge is [0, 384]:
+            #      break
+        labels = gco.graphcut(unary, pairwise.tocsr())
+        print(labels[1:10])
+        print(pairwise.todense()[1:10, 1:10])
 
-        for edgeIndex in range(edges.shape[0]):
-            print(nllh_init[edgeIndex].shape)
-            if nllh_init[edgeIndex] == nllh_candidate[edgeIndex]:
-                np.append(edgesW, [0])
-            else:
-                np.append(edgesW, [lmbda])
-
-    print(edgesW)
     # print("nllh init: {}".format(nllh_init[1:5, 1:5]))
     # print("edges: {}".format(edges[0:5, :]))
     # print("nllh candidate: {}".format(np.sum(nllh_candidate)))
@@ -167,9 +170,9 @@ def evaluate_stereo(d, gt):
 
 def problem1():
     # Read stereo images and ground truth disparities
-    i0 = rgb2gray(plt.imread('i0.png')).squeeze().astype(np.float32)
-    i1 = rgb2gray(plt.imread('i1.png')).squeeze().astype(np.float32)
-    gt = (255 * plt.imread('gt.png')).astype(np.int32)
+    i0 = rgb2gray(plt.imread('i0.png')).squeeze().astype(np.float32)[:,1:10]
+    i1 = rgb2gray(plt.imread('i1.png')).squeeze().astype(np.float32)[:,1:10]
+    gt = (255 * plt.imread('gt.png')).astype(np.int32)[:,1:10]
 
     # Set Potts penalty
     lmbda = 3.0

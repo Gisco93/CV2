@@ -106,11 +106,12 @@ def visualize_warping_practice(im1, im2, flow_gt):
     # plt.show()
     return
 
+
 def plot_flow(flow, flow_gt):
     f, (ax1, ax2) = plt.subplots(1, 2)
     ax1.axis("off")
     ax1.set_title("Flow GT")
-    ax1.imshow( flow2rgb(torch2numpy(flow_gt.squeeze(0))))
+    ax1.imshow(flow2rgb(torch2numpy(flow_gt.squeeze(0))))
     ax2.axis("off")
     ax2.set_title("Flow")
     ax2.imshow(flow2rgb(torch2numpy(flow.squeeze(0))))
@@ -158,7 +159,7 @@ def estimate_flow(im1, im2, flow_gt, lambda_hs, learning_rate, num_iter):
     return result
 
 
-def estimate_flow_LBFGS(im1, im2, flow_gt, lambda_hs, learning_rate, num_iter):
+def estimate_flow_LBFGS(im1, im2, flow_gt, lambda_hs, learning_rate, num_iter, init_flow=None):
     """
     Estimates flow using HS with LBFGS.
     Displays average endpoint error.
@@ -168,8 +169,9 @@ def estimate_flow_LBFGS(im1, im2, flow_gt, lambda_hs, learning_rate, num_iter):
     """
     assert (im1.dim() == 4 and im2.dim() == 4 and flow_gt.dim() == 4)
     assert (im1.size(1) == 1 and im2.size(1) == 1 and flow_gt.size(1) == 2)
-
-    flow = torch.rand_like(flow_gt) * 2 - 1
+    flow = init_flow
+    if init_flow is None:
+        flow = torch.rand_like(flow_gt) * 2 - 1
     flow.requires_grad = True
     # loss = energy_hs(im1, im2, flow, lambda_hs)
 
@@ -202,15 +204,19 @@ def estimate_flow_coarse_to_fine(im1, im2, flow_gt, lambda_hs, learning_rate,
     """
     assert (im1.dim() == 4 and im2.dim() == 4 and flow_gt.dim() == 4)
     assert (im1.size(1) == 1 and im2.size(1) == 1 and flow_gt.size(1) == 2)
-    flow_sampled = flow_gt.clone()/8
+    flow_sampled = torch.rand_like(flow_gt) * 2 - 1
     print(1 / (2 ** (num_level - 1)))
     for level in reversed(range(num_level)):
         print(1 / (2 ** level))
         im1_sampled = downsample(im1, 1 / (2 ** level), mode='bilinear')
         im2_sampled = downsample(im2, 1 / (2 ** level), mode='bilinear')
+        flow_gt_sampled = downsample(flow_gt, 1 / (2 ** level), mode='nearest')
         flow_sampled = downsample(flow_sampled, size=im1_sampled.size()[2:4], mode='bilinear')
-        flow_sampled = estimate_flow_LBFGS(im1_sampled, im2_sampled, 2*flow_sampled, lambda_hs, learning_rate, num_iter)
-        plot_flow(flow_sampled, flow_gt)
+        plot_flow(flow_sampled, flow_gt_sampled)
+        flow_sampled = estimate_flow_LBFGS(im1_sampled, im2_sampled, flow_gt_sampled, lambda_hs, learning_rate, num_iter,
+                                           init_flow=flow_sampled)
+        # flow_sampled *= 2
+        plot_flow(flow_sampled, flow_gt_sampled)
 
     return flow_gt
 
