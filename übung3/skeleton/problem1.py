@@ -27,15 +27,15 @@ def edges4connected(height, width):
     # edges = []
     edgeCounter = 0
     indexCounter = 0
-    for m in range(0, height, 1):
-        for n in range(0, width, 1):
-            if m < width - 1:
+    for h in range(height):
+        for w in range(width):
+            if w < width - 1:
                 edges[indexCounter] = [edgeCounter, edgeCounter + 1]
                 indexCounter += 1
-            if n < height - 1:
+            if h < height - 1:
                 edges[indexCounter] = [edgeCounter, edgeCounter + width]
                 indexCounter += 1
-                edgeCounter += 1
+            edgeCounter += 1
     # print(edges)
     # sanity check
     assert (edges.shape[0] == 2 * (height * width) - (height + width) and edges.shape[1] == 2)
@@ -78,7 +78,7 @@ def negative_stereo_loglikelihood(i0, i1, d, s, invalid_penalty=1000.0):
             else:
                 i1Copy[m][n] = invalid_penalty
 
-    nllh = negative_log_laplacian(i1Copy, s)
+    nllh = negative_log_laplacian(i0-i1Copy, s)
 
     assert (np.equal(nllh.shape, d.shape).all())
     assert (nllh.dtype in [np.float32, np.float64])
@@ -127,11 +127,11 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
             if d[int(np.floor(edge[0] / width)), int(edge[0] % width)] == \
                     d[int(np.floor(edge[1] / width)), int(edge[1] % width)]:
                 pairwise[edge[0], edge[1]] = lmbda
-            # if edge is [0, 384]:
-            #      break
+            if edge[0]>= edge[1] :
+                 print("FUCK U")
         labels = gco.graphcut(unary, pairwise.tocsr())
-        print(labels[1:10])
-        print(pairwise.todense()[1:10, 1:10])
+        print(labels.shape)
+        # print(pairwise)
 
     # print("nllh init: {}".format(nllh_init[1:5, 1:5]))
     # print("edges: {}".format(edges[0:5, :]))
@@ -170,9 +170,9 @@ def evaluate_stereo(d, gt):
 
 def problem1():
     # Read stereo images and ground truth disparities
-    i0 = rgb2gray(plt.imread('i0.png')).squeeze().astype(np.float32)[:,1:10]
-    i1 = rgb2gray(plt.imread('i1.png')).squeeze().astype(np.float32)[:,1:10]
-    gt = (255 * plt.imread('gt.png')).astype(np.int32)[:,1:10]
+    i0 = rgb2gray(plt.imread('i0.png')).squeeze().astype(np.float32)
+    i1 = rgb2gray(plt.imread('i1.png')).squeeze().astype(np.float32)
+    gt = (255 * plt.imread('gt.png')).astype(np.int32)
 
     # Set Potts penalty
     lmbda = 3.0
