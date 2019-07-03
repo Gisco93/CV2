@@ -1,0 +1,11 @@
+1.6:
+it has its problems at the edges of objects. 
+This is because how we penatlise the pairwise relationships, as a result the objects have no fine details and sharp edges.
+Another thing are textures of objects, as we use discrete disparity values with a stepsize of 1,
+therefore alpha expansion cant cover the details of surfaces like the bookshelf in the background.
+2.11:
+When we use only 3 levels the estimated flow gets more smoother but looses detail ob the boundarie of objects.
+Using 5 levels to estimate the flow has the effect that on the lower levels some pixels get extremely missmatched
+ and are assigned comparetivly huge flow values. 
+This propagate thruh the pyramid and the results shows completly mismachted in this area.
+As this is a global method it also effects all other flow values.

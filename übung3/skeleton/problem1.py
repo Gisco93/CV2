@@ -24,14 +24,16 @@ def edges4connected(height, width):
     """
 
     edges = np.ndarray(shape=((2 * (height * width) - (height + width)), 2), dtype=np.int32)
-    # edges = []
+    # add all edges to the left and down... iterate an leaveborders out.
     edgeCounter = 0
     indexCounter = 0
     for h in range(height):
         for w in range(width):
+            # to the left
             if w < width - 1:
                 edges[indexCounter] = [edgeCounter, edgeCounter + 1]
                 indexCounter += 1
+            # down
             if h < height - 1:
                 edges[indexCounter] = [edgeCounter, edgeCounter + width]
                 indexCounter += 1
@@ -46,6 +48,7 @@ def edges4connected(height, width):
 def negative_log_laplacian(x, s):
     """ Elementwise evaluation of a log Laplacian. """
 
+    # nllh for x = i_0 - i_1_w
     def equation_1(x):
         return -np.log(1 / (2 * s)) + (np.fabs(x) / s)
 
@@ -67,7 +70,7 @@ def negative_stereo_loglikelihood(i0, i1, d, s, invalid_penalty=1000.0):
       Returns:
         A `nd.array` with dtype `float32/float64`.
     """
-
+    # shift i_1 for d... invalid penalty when out of range of i_1
     nllh = []
     i1Copy = np.copy(i1)
     for m in range(d.shape[0]):
@@ -78,7 +81,7 @@ def negative_stereo_loglikelihood(i0, i1, d, s, invalid_penalty=1000.0):
             else:
                 i1Copy[m][n] = invalid_penalty
 
-    nllh = negative_log_laplacian(i0-i1Copy, s)
+    nllh = negative_log_laplacian(i0 - i1Copy, s)
 
     assert (np.equal(nllh.shape, d.shape).all())
     assert (nllh.dtype in [np.float32, np.float64])
@@ -105,45 +108,39 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
 
     """
     width = i0.shape[1]
-    print(width)
+
     d = d0.copy()
-    edgesW = []
-    edgesWcheck = []
-    for cand_disparity in range(candidate_disparities.shape[0]):
-        nllh_init = negative_stereo_loglikelihood(i0, i1, d, s)
-        nllh_candidate = negative_stereo_loglikelihood(i0, i1,
-                                                       candidate_disparities[cand_disparity] * np.ones(d0.shape), s)
-        unary = np.stack((nllh_init.reshape(-1), nllh_candidate.reshape(-1)))
+    changes = 1
+    while (changes > 0):
+        changes = 0
+        print(candidate_disparities)
+        # pick candidate disparity
+        # for first iteration it makes sense to enforce the spatial relationship in order
+        for cand_disparity in candidate_disparities:
+            # construct unary endges for picked cand_disparity
+            nllh_init = negative_stereo_loglikelihood(i0, i1, d, s)
+            nllh_candidate = negative_stereo_loglikelihood(i0, i1, cand_disparity * np.ones(d0.shape), s)
+            unary = np.stack((nllh_init.reshape(-1), nllh_candidate.reshape(-1)))
+            #construct pairwise edges
+            N = d0.shape[0] * d0.shape[1]
+            pairwise = lil_matrix((N, N), dtype=np.float32)
+            # use given potts model
+            for edge in edges:
+                if d[int(np.floor(edge[0] / width)), int(edge[0] % width)] == \
+                        d[int(np.floor(edge[1] / width)), int(edge[1] % width)]:
+                    pairwise[edge[0], edge[1]] = lmbda
+            # solve graphcut
+            labels = gco.graphcut(unary, pairwise.tocsr())
 
-        print("nllh init: {}".format(nllh_init.shape))
-        print("unary: {}".format(unary.shape))
-        print(d0.shape)
-        N = d0.shape[0] * d0.shape[1]
-        print(N)
-        pairwise = lil_matrix((N, N), dtype=np.float32)
+            labels = labels.reshape(d0.shape)
+            #apply labels
+            d[0 < labels] = cand_disparity
+            print(labels.sum())
+            #sum up changes
+            changes += labels.sum()
+        # for any further iteration permutate candidates
+        candidate_disparities = np.random.permutation(candidate_disparities)
 
-        for edge in edges:
-            # print(edge)
-            if d[int(np.floor(edge[0] / width)), int(edge[0] % width)] == \
-                    d[int(np.floor(edge[1] / width)), int(edge[1] % width)]:
-                pairwise[edge[0], edge[1]] = lmbda
-            if edge[0]>= edge[1] :
-                 print("FUCK U")
-        labels = gco.graphcut(unary, pairwise.tocsr())
-        print(labels.shape)
-        # print(pairwise)
-
-    # print("nllh init: {}".format(nllh_init[1:5, 1:5]))
-    # print("edges: {}".format(edges[0:5, :]))
-    # print("nllh candidate: {}".format(np.sum(nllh_candidate)))
-
-    # unaryGC =
-
-    # f, (ax1, ax2, ax3) = plt.subplots(1, 3)
-    # ax1.imshow(i1-i1Copy, cmap='gray')
-    # ax2.imshow(i1, cmap='gray')
-    # ax3.imshow(i1Copy, cmap='gray')
-    # plt.show()
     assert (np.equal(d.shape, d0.shape).all())
     assert (d.dtype == d0.dtype)
     return d
@@ -156,16 +153,37 @@ def show_stereo(d, gt):
     """
 
     # Crop images to valid ground truth area
+    non_zero = np.where(gt > 0)
+    minimum = np.amin(non_zero, axis=1)
+    maximum = np.amax(non_zero, axis=1)
+    f, (ax1, ax2) = plt.subplots(1, 2)
+    ax1.axis("off")
+    ax2.set_title("GT")
+    # will show 5 as black cause autoscaling.
+    ax1.imshow(gt[minimum[0]:maximum[0], minimum[1]:maximum[1]], cmap='gray')
+    ax1.axis("off")
+    ax2.set_title("d")
+    # will show 0 as black cause autoscaling.
+    ax2.imshow(d[minimum[0]:maximum[0], minimum[1]:maximum[1]], cmap='gray')
+    plt.show()
 
     return
 
 
 def evaluate_stereo(d, gt):
     """Computes percentage of correct labels in the valid region (gt > 0)."""
-
-    result = []
-
-    return result
+    # get all greater 0
+    non_zero = np.where(gt > 0)
+    # find min/max index
+    minimum = np.amin(non_zero, axis=1)
+    maximum = np.amax(non_zero, axis=1)
+    #crop
+    gt_crop = gt[minimum[0]:maximum[0], minimum[1]:maximum[1]]
+    d_crop = d[minimum[0]:maximum[0], minimum[1]:maximum[1]]
+    # find all correct labels
+    result = np.where(gt_crop == d_crop)
+    # calc percentage
+    return result[0].shape[0] / (gt_crop.shape[0] * gt_crop.shape[1])
 
 
 def problem1():
@@ -180,25 +198,23 @@ def problem1():
 
     # Create 4 connected edge neighborhood
     edges = edges4connected(i0.shape[0], i0.shape[1])
-    # edges = edges4connected(10,10)
-    # print(edges)
+
     # Candidate search range
     candidate_disparities = np.arange(0, gt.max() + 1)
 
     # Graph cuts with zero initialization
     zero_init = np.zeros(gt.shape).astype(np.int32)
-    estimate_zero_init = alpha_expansion(i0, i1, edges, gt, candidate_disparities, s, lmbda)
     estimate_zero_init = alpha_expansion(i0, i1, edges, zero_init, candidate_disparities, s, lmbda)
     show_stereo(estimate_zero_init, gt)
     perc_correct = evaluate_stereo(estimate_zero_init, gt)
-    print("Correct labels (zero init): %3.2f%%" % (perc_correct * 100))
+    print("Correct labels (zero init): %3.2f%%" % (perc_correct*100))
 
     # Graph cuts with random initialization
     random_init = np.random.randint(low=0, high=gt.max() + 1, size=i0.shape)
     estimate_random_init = alpha_expansion(i0, i1, edges, random_init, candidate_disparities, s, lmbda)
     show_stereo(estimate_random_init, gt)
     perc_correct = evaluate_stereo(estimate_random_init, gt)
-    print("Correct labels (random init): %3.2f%%" % (perc_correct * 100))
+    print("Correct labels (random init): %3.2f%%" % (perc_correct*100))
 
 
 if __name__ == '__main__':
