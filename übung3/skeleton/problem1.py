@@ -130,6 +130,7 @@ def alpha_expansion(i0, i1, edges, d0, candidate_disparities, s, lmbda):
                         d[int(np.floor(edge[1] / width)), int(edge[1] % width)]:
                     pairwise[edge[0], edge[1]] = lmbda
             # solve graphcut
+            print(unary[1:10,1:10])
             labels = gco.graphcut(unary, pairwise.tocsr())
 
             labels = labels.reshape(d0.shape)
