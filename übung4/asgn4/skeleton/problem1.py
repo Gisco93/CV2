@@ -252,19 +252,20 @@ def iterated_graphcuts(im, label0, pairwise, gmm_components, num_segments):
     old_label = label0 + 11
     # you should call expand_alpha eventually... no fuck off ;P
     c = 0
+    # stop when almost no labels change... results are this way good enough and it doesn`t take forever
     while (np.fabs(np.sum(old_label - label)) >= 10.0):
         old_label = label
         c += 1
         for alpha in range(num_segments):
             label = expand_alpha(alpha, im, label, pairwise, gmm_components, num_segments)
-    # image saving used:
-    #     if c % 4 == 1:
-    #         print("intermediate")
-    #         plt.imsave(os.path.join(os.getcwd(), 'bin', 'intermediate{}.png'.format(c)), label2color(im, label))
-    #     print("iteration: ", c)
-    #     print(np.sum(old_label - label))
-    # print("final")
-    # plt.imsave(os.path.join(os.getcwd(), 'bin', 'final.png'), label2color(im, label))
+        # image saving used:
+        if c % 4 == 1:
+            print("intermediate")
+            plt.imsave(os.path.join(os.getcwd(), 'bin', 'intermediate{}.png'.format(c)), label2color(im, label))
+        print("iteration: ", c)
+        print(np.sum(old_label - label))
+    print("final")
+    plt.imsave(os.path.join(os.getcwd(), 'bin', 'final.png'), label2color(im, label))
 
     assert (label.ndim == 2 and np.equal(label.shape, label0.shape[0:2]).all())
     assert (label.dtype in [np.int32, np.int64])
@@ -274,7 +275,7 @@ def iterated_graphcuts(im, label0, pairwise, gmm_components, num_segments):
 def problem1():
     # Find some good settings: Keep it simple!
     num_segments = 3
-    gmm_components = 20  # Find a good parameter
+    gmm_components = 5  # Find a good parameter
     lmbda = 100 # Find a good parameter
 
     # Read input image
